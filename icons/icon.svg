@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Sturzfaktor">
+  <defs>
+    <linearGradient id="slate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#243443"/>
+      <stop offset="0.6" stop-color="#1b2733"/>
+      <stop offset="1" stop-color="#121b24"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#slate)"/>
+
+  <!-- Sturz: Pfeil nach unten (freie Fallstrecke) -->
+  <path d="M256 150 V300" stroke="#ffffff" stroke-width="42" stroke-linecap="round"/>
+  <path d="M208 296 H304 L256 374 Z" fill="#ffffff"/>
+
+  <!-- Fangstoß: Aufprall-Linie + Funken -->
+  <path d="M150 412 H362" stroke="#f5b301" stroke-width="30" stroke-linecap="round"/>
+  <path d="M256 404 L232 380 M256 404 L280 380 M256 402 V378"
+        stroke="#f5b301" stroke-width="10" stroke-linecap="round"/>
+</svg>

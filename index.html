@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sturzfaktor &amp; Fangstoß</title>
+
+<!-- PWA / iOS Home-Bildschirm -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sturzfaktor">
+<meta name="application-name" content="Sturzfaktor">
+<meta name="theme-color" content="#1b2733">
+<meta name="description" content="Sturzfaktor, Fallenergie und Fangstoß (Impact Force) für Kletterseile sofort berechnen – mit Seilmodul, Kraft auf Zwischensicherung und Sicherer.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============================ HEADER ============================ -->
+<header class="hdr">
+  <span class="mark" aria-hidden="true">
+    <svg viewBox="0 0 48 48" width="26" height="26">
+      <path d="M24 9 V30" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/>
+      <path d="M24 34 L18 25 H30 Z" fill="#fff"/>
+      <path d="M12 39 H36" stroke="#f5b301" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M24 33 l-5 4 M24 33 l5 4 M24 32 v6" stroke="#f5b301" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <div class="brand">
+    <h1>Sturzfaktor &amp; Fangstoß</h1>
+    <p class="sub">Energie · Impact Force · Kletterseil</p>
+  </div>
+  <button id="btn-install" class="install" hidden>Installieren</button>
+</header>
+
+<main>
+
+  <!-- ============================ EINGABEN ============================ -->
+  <section class="card inputs" aria-label="Eingaben">
+
+    <!-- Systemmasse -->
+    <div class="field">
+      <div class="field-top"><label for="in-m">Systemmasse</label><span class="unit">kg</span></div>
+      <div class="num">
+        <button class="step" type="button" data-step="-1" data-target="in-m" aria-label="weniger">−</button>
+        <input id="in-m" class="val" type="number" inputmode="decimal" min="0" step="1" value="80">
+        <button class="step" type="button" data-step="1" data-target="in-m" aria-label="mehr">+</button>
+      </div>
+      <input id="sl-m" class="slider" type="range" min="0" max="250" step="1" value="80" data-target="in-m" tabindex="-1" aria-hidden="true">
+    </div>
+
+    <!-- Freie Fallhöhe -->
+    <div class="field">
+      <div class="field-top"><label for="in-h">Freie Fallhöhe</label><span class="unit">m</span></div>
+      <div class="num">
+        <button class="step" type="button" data-step="-0.5" data-target="in-h" aria-label="weniger">−</button>
+        <input id="in-h" class="val" type="number" inputmode="decimal" min="0" step="0.5" value="4">
+        <button class="step" type="button" data-step="0.5" data-target="in-h" aria-label="mehr">+</button>
+      </div>
+      <input id="sl-h" class="slider" type="range" min="0" max="50" step="0.5" value="4" data-target="in-h" tabindex="-1" aria-hidden="true">
+      <p class="field-hint">Volle Fallstrecke, bis das Seil greift – etwa doppelte Höhe über der letzten Sicherung.</p>
+    </div>
+
+    <!-- Ausgegebenes Seil -->
+    <div class="field">
+      <div class="field-top"><label for="in-L">Ausgegebenes Seil</label><span class="unit">m</span></div>
+      <div class="num">
+        <button class="step" type="button" data-step="-0.5" data-target="in-L" aria-label="weniger">−</button>
+        <input id="in-L" class="val" type="number" inputmode="decimal" min="0" step="0.5" value="10">
+        <button class="step" type="button" data-step="0.5" data-target="in-L" aria-label="mehr">+</button>
+      </div>
+      <input id="sl-L" class="slider" type="range" min="0" max="80" step="0.5" value="10" data-target="in-L" tabindex="-1" aria-hidden="true">
+    </div>
+
+    <!-- Seilmodul + Presets -->
+    <div class="field">
+      <div class="field-top"><label for="in-M">Seilmodul (E·A)</label><span class="unit">kN</span></div>
+      <div class="num">
+        <button class="step" type="button" data-step="-1" data-target="in-M" aria-label="weniger">−</button>
+        <input id="in-M" class="val" type="number" inputmode="decimal" min="1" step="1" value="20">
+        <button class="step" type="button" data-step="1" data-target="in-M" aria-label="mehr">+</button>
+      </div>
+      <div class="chips" id="modul-presets" role="group" aria-label="Seil-Steifigkeit">
+        <button class="chip" type="button" data-modul="weich">weich · 16</button>
+        <button class="chip" type="button" data-modul="mittel">mittel · 20</button>
+        <button class="chip" type="button" data-modul="steif">steif · 24</button>
+      </div>
+      <p class="field-hint">Seilsteifigkeit – höher = härterer Fangstoß. Exakt: Datenblatt-Fangstoß unten eintragen.</p>
+    </div>
+
+    <!-- Datenblatt-Rückrechnung -->
+    <details class="disc" id="disc-uiaa">
+      <summary>Seilmodul aus Datenblatt</summary>
+      <div class="disc-body">
+        <label class="toggle"><input type="checkbox" id="uiaa-on"> Modul aus UIAA-Fangstoß verwenden</label>
+        <div class="field">
+          <div class="field-top"><label for="in-uiaa">UIAA-Fangstoß (Normsturz 80&nbsp;kg)</label><span class="unit">kN</span></div>
+          <div class="num">
+            <button class="step" type="button" data-step="-0.1" data-target="in-uiaa" aria-label="weniger">−</button>
+            <input id="in-uiaa" class="val" type="number" inputmode="decimal" min="0" step="0.1" value="8.5">
+            <button class="step" type="button" data-step="0.1" data-target="in-uiaa" aria-label="mehr">+</button>
+          </div>
+        </div>
+        <p class="derived" id="uiaa-derived">→ Seilmodul ≈ — kN</p>
+      </div>
+    </details>
+
+    <!-- Erweitert -->
+    <details class="disc" id="disc-adv">
+      <summary>Erweitert</summary>
+      <div class="disc-body">
+        <div class="field">
+          <div class="field-top"><label for="in-c">Umlenk-Reibung <span class="mono">c</span></label><span class="unit" id="c-val">0,66</span></div>
+          <input id="in-c" class="slider wide" type="range" min="0" max="1" step="0.01" value="0.66" aria-describedby="c-note">
+          <p class="muted" id="c-note">Anker = 1,66·F · reibungsfrei (c=1): 2·F</p>
+        </div>
+      </div>
+    </details>
+
+    <button class="reset" type="button" id="btn-reset">Zurücksetzen</button>
+  </section>
+
+  <!-- ============================ ERGEBNIS ============================ -->
+  <section class="card result" aria-label="Ergebnis" aria-live="polite">
+
+    <div class="primary">
+      <div class="primary-top">
+        <span class="r-label">Fangstoß auf Kletterer</span>
+        <span class="pill" id="r-stufe">—</span>
+      </div>
+      <div class="big" id="r-big"><span id="r-fangstoss">—</span><span class="big-unit">kN</span></div>
+      <div class="gauge" aria-hidden="true">
+        <div class="gauge-zones"></div>
+        <div class="gauge-marker" id="gauge-marker" hidden></div>
+      </div>
+      <div class="gauge-scale" aria-hidden="true">
+        <span>0</span><span>4</span><span>8</span><span>12</span><span>16+</span>
+      </div>
+      <p class="r-hint" id="hint-fangstoss" hidden></p>
+    </div>
+
+    <div class="grid">
+      <div class="metric">
+        <span class="m-label">Sturzfaktor <span class="badge" id="r-faktor-badge" hidden>extrem</span></span>
+        <span class="m-val" id="r-faktor">—</span>
+        <span class="m-sub" id="r-faktor-sub">f = h / L</span>
+      </div>
+      <div class="metric">
+        <span class="m-label">Fallenergie</span>
+        <span class="m-val" id="r-energie">—</span>
+        <span class="m-sub" id="r-energie-sub">E = m · g · h</span>
+      </div>
+      <div class="metric">
+        <span class="m-label">Aufprall-Geschwindigkeit</span>
+        <span class="m-val" id="r-v">—</span>
+        <span class="m-sub">v = √(2·g·h)</span>
+      </div>
+      <div class="metric">
+        <span class="m-label">Seildehnung (Peak)</span>
+        <span class="m-val" id="r-dehnung">—</span>
+        <span class="m-sub" id="r-dehnung-sub">ε = F / M</span>
+      </div>
+      <div class="metric">
+        <span class="m-label">Kraft Zwischensicherung</span>
+        <span class="m-val" id="r-anker">—</span>
+        <span class="m-sub">(1+c) · F</span>
+      </div>
+      <div class="metric">
+        <span class="m-label">Kraft auf Sicherer</span>
+        <span class="m-val" id="r-sicherer">—</span>
+        <span class="m-sub">c · F</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p class="mono">F = m·g + √( (m·g)² + 2·m·g·M·f )</p>
+    <p class="muted">g = 9,81 m/s² · UIAA-Normsturz: 80 kg, Faktor 1,77, Grenze 12 kN.</p>
+    <p class="muted">Lehr- und Abschätzungswerkzeug – keine Bemessung realer Sicherungssysteme.
+      Reibung, Knoten, dynamisches Sichern &amp; Körperdämpfung senken die realen Kräfte deutlich.</p>
+  </footer>
+
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

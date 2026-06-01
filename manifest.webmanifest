@@ -1,0 +1,19 @@
+{
+  "name": "Sturzfaktor & Fangstoß",
+  "short_name": "Sturzfaktor",
+  "description": "Sturzfaktor, Fallenergie und Fangstoß (Impact Force) für Kletterseile sofort berechnen – mit Seilmodul, Kraft auf Zwischensicherung und Sicherer.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef1f4",
+  "theme_color": "#1b2733",
+  "categories": ["sports", "utilities", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

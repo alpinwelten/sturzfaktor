@@ -1,0 +1,12 @@
+{
+  "name": "sturzfaktor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PWA: Sturzfaktor, Fallenergie & Fangstoß (Impact Force) für Kletterseile.",
+  "scripts": {
+    "test": "node --test",
+    "icons": "node tools/generate-icons.mjs",
+    "qr": "python3 tools/make-qr.py"
+  }
+}

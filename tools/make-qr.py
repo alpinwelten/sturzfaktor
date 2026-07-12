@@ -14,8 +14,10 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 URL = sys.argv[1] if len(sys.argv) > 1 else "https://alpinwelten.github.io/sturzfaktor/"
 
-INK = (27, 39, 51)       # Anthrazit/Schiefer
-ACCENT = (245, 179, 1)   # Signal-Amber
+INK = (26, 26, 26)       # Klar·Teal --ink #1A1A1A (QR-Module + URL)
+BRAND = (0, 96, 100)     # Klar·Teal --brand #006064 (Titel)
+HERO = [(0, 120, 126), (0, 96, 100), (0, 71, 75)]  # Hero-Verlauf #00787E->#006064->#00474B
+MUTED = (94, 107, 107)   # Klar·Teal --meta #5E6B6B
 WHITE = (255, 255, 255)
 
 def make_qr(url, box=20, border=2):
@@ -63,11 +65,20 @@ card = Image.new("RGB", (W + 2 * pad, qr.height + top + bottom), WHITE)
 draw = ImageDraw.Draw(card)
 cx = card.width // 2
 
-# Akzent-Leiste oben
-draw.rectangle([0, 0, card.width, 12], fill=ACCENT)
+# Marken-Leiste oben: Hero-Verlauf
+for x in range(card.width):
+    t = x / max(1, card.width - 1)
+    if t < 0.45:
+        f = t / 0.45
+        c0, c1 = HERO[0], HERO[1]
+    else:
+        f = (t - 0.45) / 0.55
+        c0, c1 = HERO[1], HERO[2]
+    col = tuple(round(c0[i] + (c1[i] - c0[i]) * f) for i in range(3))
+    draw.rectangle([x, 0, x + 1, 12], fill=col)
 
-center_text(draw, cx, pad, "Sturzfaktor & Fangstoß", title_f, INK)
-center_text(draw, cx, pad + 78, "Energie · Impact Force · Kletterseil", sub_f, (90, 107, 122))
+center_text(draw, cx, pad, "Sturzfaktor & Fangstoß", title_f, BRAND)
+center_text(draw, cx, pad + 78, "Energie · Impact Force · Kletterseil", sub_f, MUTED)
 
 card.paste(qr, (pad, top))
 center_text(draw, cx, top + qr.height + 28,

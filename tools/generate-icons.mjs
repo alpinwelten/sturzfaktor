@@ -32,8 +32,8 @@ for (const n of SIZES) {
   console.log(`icon-${n}.png`);
 }
 
-// Maskable: Motiv in der Safe-Zone (~80 %), Hintergrund voll deckend (Schiefer).
+// Maskable: Motiv in der Safe-Zone (~80 %), Hintergrund voll deckend (teal-700).
 render(
-  `<!doctype html><meta charset=utf-8><body style="margin:0;background:#1b2733"><div style="width:512px;height:512px;display:flex;align-items:center;justify-content:center"><img src="file://${svg}" width=410 height=410></div></body>`,
+  `<!doctype html><meta charset=utf-8><body style="margin:0;background:#006064"><div style="width:512px;height:512px;display:flex;align-items:center;justify-content:center"><img src="file://${svg}" width=410 height=410></div></body>`,
   join(root, 'icons', 'icon-maskable-512.png'), 512, 512);
 console.log('icon-maskable-512.png');

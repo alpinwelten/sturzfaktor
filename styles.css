@@ -1,30 +1,30 @@
 /* ============================================================
-   STURZFAKTOR & FANGSTOSS — Designsystem „Schiefer + Signal-Ampel"
-   Ruhiges Anthrazit/Schiefer, ein präziser Akzent, tabellarische Zahlen.
-   Mobile-first, schlicht, hochprofessionell.
+   STURZFAKTOR & FANGSTOSS — Designsystem „Klar·Teal + Signal-Ampel"
+   Ruhige Klar·Teal-Fläche, ein präziser Teal-Akzent, tabellarische Zahlen.
+   Tokens aus Klar-Teal-Palette.html (Master). Mobile-first, schlicht.
    ============================================================ */
 :root {
   /* Flächen */
-  --bg:        #eef1f4;   /* kühles Schiefer-Hellgrau */
-  --surface:   #ffffff;   /* Karten */
-  --surface-2: #f5f7f9;   /* eingelassene Felder */
-  --line:      #e0e6ec;   /* Haarlinien */
-  --line-2:    #cdd6df;
+  --bg:        #F4F7F7;   /* neutral-50 */
+  --surface:   #FFFFFF;   /* Karten */
+  --surface-2: #F0FAFA;   /* eingelassene Felder */
+  --line:      #E6ECEC;   /* Haarlinien */
+  --line-2:    #CFD8D9;
 
   /* Tinte */
-  --ink:    #16212c;      /* Anthrazit-Text */
-  --ink-2:  #5a6b7a;      /* gedämpft */
-  --ink-3:  #6b7a89;      /* Hinweise (WCAG-AA-konform auf Weiß) */
+  --ink:    #1A1A1A;      /* Klar-Text */
+  --ink-2:  #5E6B6B;      /* gedämpft */
+  --ink-3:  #7B8888;      /* Hinweise (WCAG-AA-konform auf Weiß) */
 
   /* Akzent (interaktiv) */
-  --accent:      #2f6fed;
-  --accent-soft: #e7eefc;
+  --accent:      #006064;
+  --accent-soft: #DCEFEF;
 
-  /* Signal-Ampel */
-  --gut:  #1f9d57;
-  --warn: #d99a00;
-  --hoch: #e8730c;
-  --krit: #d92d20;
+  /* Signal-Ampel (Status-Inks; dunkel: helle Text-taugliche Töne) */
+  --gut:  #276749;
+  --warn: #B7791F;
+  --hoch: #B45309;
+  --krit: #8B1A1A;
 
   --font: -apple-system, "SF Pro Text", "Inter", "Segoe UI", system-ui, Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
@@ -32,7 +32,7 @@
   --r-sm: 9px;
   --r-md: 13px;
   --r-lg: 18px;
-  --shadow: 0 1px 2px rgba(22,33,44,.05), 0 6px 18px rgba(22,33,44,.06);
+  --shadow: 0 1px 2px rgba(0,40,40,.05), 0 6px 18px rgba(0,40,40,.06);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,9 +56,9 @@ body {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 12px;
   padding: calc(env(safe-area-inset-top, 0px) + 13px) 16px 13px;
-  background: linear-gradient(135deg, #243443 0%, #1b2733 60%, #141d26 100%);
+  background: linear-gradient(135deg, #00787E 0%, #006064 60%, #00474B 100%);
   color: #fff;
-  box-shadow: 0 2px 14px rgba(20,29,38,.28);
+  box-shadow: 0 2px 14px rgba(0,40,40,.28);
 }
 .hdr .mark {
   width: 38px; height: 38px; flex: none;
@@ -133,12 +133,12 @@ main {
   -webkit-appearance: none; appearance: none; margin-top: -8px;
   width: 21px; height: 21px; border-radius: 50%;
   background: var(--accent); border: 3px solid #fff;
-  box-shadow: 0 1px 4px rgba(22,33,44,.28); cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,40,40,.28); cursor: pointer;
 }
 .slider::-moz-range-thumb {
   width: 18px; height: 18px; border-radius: 50%;
   background: var(--accent); border: 3px solid #fff;
-  box-shadow: 0 1px 4px rgba(22,33,44,.28); cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,40,40,.28); cursor: pointer;
 }
 .slider.wide { height: 30px; }
 
@@ -189,15 +189,16 @@ main {
 .primary { display: flex; flex-direction: column; gap: 9px; }
 .primary-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .r-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+/* Status-Badges: satt gefüllt, Versalien, dezente Ecke (Klar·Teal-Kanon 2026-07-12) */
 .pill {
-  font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 999px;
-  background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line-2);
-  letter-spacing: .2px; white-space: nowrap;
+  font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 3px;
+  background: var(--surface-2); color: var(--ink-2); border: 0;
+  letter-spacing: .2px; white-space: nowrap; text-transform: uppercase;
 }
-.pill[data-stufe="gut"]  { background: #e7f6ee; color: #137a40; border-color: #bce6cf; }
-.pill[data-stufe="warn"] { background: #fbf2d9; color: #7a5800; border-color: #ecd9a3; }
-.pill[data-stufe="hoch"] { background: #fce9d8; color: #9a4a00; border-color: #f3cba3; }
-.pill[data-stufe="krit"] { background: #fbe2e0; color: #b91c14; border-color: #f3bbb6; }
+.pill[data-stufe="gut"]  { background: #276749; color: #fff; }
+.pill[data-stufe="warn"] { background: #92600F; color: #fff; }
+.pill[data-stufe="hoch"] { background: #B45309; color: #fff; }
+.pill[data-stufe="krit"] { background: #8B1A1A; color: #fff; }
 
 .big {
   display: flex; align-items: baseline; gap: 8px;
@@ -207,7 +208,7 @@ main {
 .big #r-fangstoss { font-size: 54px; font-weight: 800; letter-spacing: -1px; }
 .big .big-unit { font-size: 22px; font-weight: 700; color: var(--ink-2); }
 .big[data-stufe="gut"]  #r-fangstoss { color: var(--gut); }
-.big[data-stufe="warn"] #r-fangstoss { color: #b07e00; }
+.big[data-stufe="warn"] #r-fangstoss { color: var(--warn); }
 .big[data-stufe="hoch"] #r-fangstoss { color: var(--hoch); }
 .big[data-stufe="krit"] #r-fangstoss { color: var(--krit); }
 
@@ -221,7 +222,7 @@ main {
 }
 .gauge-marker {
   position: absolute; top: -3px; width: 4px; height: 18px; border-radius: 3px;
-  background: #fff; box-shadow: 0 0 0 2px rgba(22,33,44,.55);
+  background: #fff; box-shadow: 0 0 0 2px rgba(0,40,40,.55);
   transform: translateX(-50%); transition: left .12s ease;
 }
 .gauge-scale {
@@ -250,8 +251,8 @@ main {
 .m-val { font-size: 22px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
 .m-sub { font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
 .badge {
-  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
-  background: #fbe2e0; color: var(--krit); letter-spacing: .3px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
+  background: #8B1A1A; color: #fff; letter-spacing: .3px; text-transform: uppercase;
 }
 
 /* Fußnote */
@@ -265,13 +266,17 @@ main {
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e151c; --surface: #161f28; --surface-2: #1c2731; --line: #25323d; --line-2: #33424f;
-    --ink: #eaf0f5; --ink-2: #9fb0bf; --ink-3: #8294a6; --accent-soft: #1b2f4d;
+    --bg: #0C1313; --surface: #182423; --surface-2: #1C2827; --line: #34433F; --line-2: #454E4E;
+    --ink: #E6F4F4; --ink-2: #7E9897; --ink-3: #6E8483;
+    --accent: #7CC4C6; --accent-soft: #002828;
+    /* Ampel als Text auf Dunkel: helle, Token-basierte Töne (gut=dk-ok, warn=eval-mid, hoch=eval-low, krit=dk-critical) */
+    --gut: #5FD39A; --warn: #EAD9B0; --hoch: #E0A06E; --krit: #F4A0A0;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
   }
-  .pill[data-stufe="gut"]  { background: #12301f; border-color: #1f5236; }
-  .pill[data-stufe="warn"] { background: #322806; border-color: #5a4a12; color: #f0c33c; }
-  .pill[data-stufe="hoch"] { background: #34200c; border-color: #5e3a18; }
-  .pill[data-stufe="krit"] { background: #34130f; border-color: #5e221c; }
-  .badge { background: #34130f; }
+  /* Badges dunkel: helle Füllung + Tinte (Klar·Teal-Kanon 2026-07-12) */
+  .pill[data-stufe="gut"]  { background: #5FD39A; color: #1A1A1A; }
+  .pill[data-stufe="warn"] { background: #AE782A; color: #1A1A1A; }
+  .pill[data-stufe="hoch"] { background: #CC6621; color: #1A1A1A; }
+  .pill[data-stufe="krit"] { background: #F4A0A0; color: #1A1A1A; }
+  .badge { background: #F4A0A0; color: #1A1A1A; }
 }

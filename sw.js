@@ -1,7 +1,7 @@
 /* Service Worker – Offline-Betrieb für den Sturzfaktor-/Fangstoß-Rechner.
    Strategie: App-Shell beim Install vorgeladen; Inhalt (HTML/JS/CSS) network-first
    (damit Updates ohne Neuinstallation ankommen), übrige same-origin GETs cache-first. */
-const VERSION = 'sturzfaktor-v2';
+const VERSION = 'sturzfaktor-v3';
 const SHELL = [
   './',
   'index.html',

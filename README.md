@@ -13,26 +13,115 @@ oberste Zwischensicherung und Sicherer.
 - **Signal-Ampel** für den Fangstoß (gering · deutlich · hoch · kritisch ggü. UIAA 12 kN)
 - **Seilmodul** per Preset (weich/mittel/steif) oder frei – plus optionale Rückrechnung
   aus dem **UIAA-Fangstoß** des Seil-Datenblatts
+- **Dynamik-Effekte** nach Leuthäusser Part 3: Seildurchlauf `s`, Schlappseil `δ`,
+  Körpersicherung `m₀`
 - Installierbar & offline (Service Worker)
 
 ## Formeln
 
+### Grundrechnung
+
 | Größe | Formel |
 |---|---|
 | Sturzfaktor | `f = h / L` |
-| Fallenergie | `E = m · g · h`  (+ `v = √(2gh)`) |
+| Fallenergie | `E = m · g · h`  (+ `v₀ = √(2gh)`) |
 | Fangstoß | `F = m·g + √( (m·g)² + 2·m·g·M·f )` |
 | Seildehnung | `ε = F / M`, `d = ε · L` |
-| Kraft Zwischensicherung | `(1 + c) · F` |
-| Kraft auf Sicherer | `c · F` |
+| Kraft Zwischensicherung | `F_U = (1 + c) · F` |
+| Kraft auf Sicherer | `F_S = c · F` |
 | Modul aus Datenblatt | `M = ((F_UIAA − m·g)² − (m·g)²) / (2·m·g·f_UIAA)` |
 
+Die Fangstoßformel der App ist identisch mit der „familiar impact force formula" des
+Papers, `F = m·g + m·√(v₀²ω² + g²)` mit `v₀² = 2gh` und `ω² = M/(L·m)` — als Test
+nachgewiesen (`Äquivalenz: …`).
+
+### Dynamik nach Leuthäusser Part 3
+
+| Größe | Formel | Beleg |
+|---|---|---|
+| Reibungsparameter | `ρ = e^(μ·π)`, **`c = 1/ρ`** | Gl. 1.2 S. 5 · Gl. 2.4 S. 8 |
+| Kräfte am Umlenkpunkt | `F_S = F_R/ρ`, `F_U = F_R·(1 + 1/ρ)` | Gl. 2.4, S. 8 |
+| Kreisfrequenz | `ω = √(k/m)` mit `k = M/L` | Gl. 6.1, S. 16 |
+| Durchlauflänge | `s = u·(t_e − t₀)` | Gl. 6.8, S. 18 |
+| Maxima bei festen Zeiten | `F_R^max = Max(F₁, F₂)` | Gl. 6.5–6.7, S. 18 |
+| Optimale Steuerung | `t₀(u) = (1/ω)·arcsin( ½·(1 + 2g/(u·ω)) )`, `t_e ≅ π/(2ω)` | Gl. 6.9, S. 20 |
+| **Seildurchlauf (verbindlich)** | `s(u) = u·(π/(2ω) − t₀(u))` und `F_R^max(u) ≅ m·g + m·√( (u·√(1 − [½(1 + 2g/(ωu))]²) − v₀)²·ω² + (½·u·ω)² )` | Gl. 6.10, S. 20 |
+| Linearisierung (nur Vergleich) | `F_R^max(s) ≅ (m·g + m·√(v₀²ω² + g²))·(1 − (0,87·ω/v₀ − 1,12·g/v₀²)·s)` | Gl. 6.11, S. 20 |
+| Schlappseil | **`f_eff = f + (1 − f)·δ/L`** in der Fangstoßformel | Gl. 6.12, S. 20 |
+| Körpersicherung | `m_red = m·m₀/(m₀ + m)`, `Ω² = k/m_red`, `F̃_R^HO = m_red·2g + m_red·√( Ω²·(v₀ − u)² + (2g)² )` | S. 21, Fig. 6-5 |
+
 **Konstanten:** `g = 9,81 m/s²` · UIAA-Normsturz `80 kg`, Faktor `1,77`, Grenze `12 kN` ·
-Umlenk-Reibung `c = 0,66` (Default) · Modul-Presets `16 / 20 / 24 kN`.
-`M` = Seilmodul (E·A), Newton intern, kN im UI.
+Umlenk-Reibung **`c = 0,68` (Default) `= 1/ρ` mit `ρ = 1,46`** (DAV-Messwert, Part 3
+Gl. 7.1, S. 24; `1/1,46 = 0,685`, auf die UI-Schrittweite 0,01 gerundet) ·
+Modul-Presets `16 / 20 / 24 kN`. `M` = Seilmodul (E·A), Newton intern, kN im UI.
 
 > Richtwerte nach dem Standard-Seilmodell (harmonischer Oszillator) ohne Reibung im
 > Sicherungsgerät, Knoten und Körperdämpfung. Reale Stürze liegen meist darunter.
+
+### Umsetzung des Seildurchlaufs
+
+Die App rechnet **verbindlich nach Gl. 6.10**. Weil `s(u)` nicht analytisch invertierbar
+ist, wird `u(s)` per Bisektion auf `u ≥ 2g/ω` bestimmt (`s(u)` ist dort streng monoton
+wachsend; bei `u = 2g/ω` ist `s = 0`, und Gl. 6.10 liefert genau den Basis-Fangstoß).
+Gl. 6.11 dient ausschließlich als interner Konsistenzvergleich für kleine `s` und gilt
+nur für `v₀ > 1,12·g/(0,87·ω)`.
+
+Angezeigt wird der beste erreichbare Fangstoß bei **höchstens** `s` Durchlauf, also das
+Minimum von Gl. 6.10 über alle `u` mit `s(u) ≤ s` — der Sichernde kann schließlich auch
+weniger Seil durchlaufen lassen. In allen realistischen Stürzen ist das exakt der
+Gl.-6.10-Wert bei `s`. Nur bei sehr kleinen Sturzfaktoren (kleines `v₀`) hat Gl. 6.10
+innerhalb 0–1 m ein Minimum; dann weist die App Sättigung aus, statt eine weitere
+Reduktion zu versprechen.
+
+### Grenzen dieser Erweiterung
+
+- **Seildurchlauf ist ein theoretisches Optimum.** Gl. 6.10 unterstellt eine ideal
+  gesteuerte Bremse, die genau am Kraftmaximum stoppt. Reale Bremsgeräte lösen erst beim
+  Unterschreiten einer Kraftschwelle aus; die Experimente in Fig. 7-9 (S. 27/28) streuen
+  stark und bleiben deutlich über der Optimalkurve. Die App gibt deshalb **keine
+  Handlungsempfehlung**, Seil durchlaufen zu lassen.
+- **Gültig bis `s ≤ 1 m`** (Paper: „excellent for s ≤ 1 m", S. 20). Für `s > 1 m` tritt
+  laut S. 22 keine nennenswerte zusätzliche Reduktion mehr ein — die App verspricht dort
+  keine und weist darauf hin.
+- **Schlappseil:** Näherung für kleine `δ/L`. Für `f < 1` (Halle, Klettergarten)
+  **erhöht** Schlappseil den Fangstoß; nur für `f > 1` würde es ihn senken, was in
+  Einseillängen-Routen gar nicht vorkommt (S. 21).
+- **Körpersicherung:** ungedämpfter harmonischer Oszillator mit `2g`-Termen. Für
+  realistische `m₀ = 50–120 kg` liegt `F̃` unter der Fixpunkt-Formel; für sehr große `m₀`
+  läuft das Modell gegen `2mg + m·√(v₀²ω² + 4g²)` und damit **über** die Fixpunkt-Formel
+  — dort ist der Vergleich nicht mehr aussagekräftig.
+- **Keine innere Seilreibung.** Alle drei Effekte benutzen das lineare Modell ohne
+  Viskosität. Das vollständige SLS-/ODE-System (Gl. 3.2/4.4) ist bewusst nicht
+  implementiert; die App bleibt ein analytischer Rechner. Die Effekte werden einzeln und
+  nicht miteinander kombiniert gezeigt.
+
+## Validierung gegen die DAV-Messung
+
+Die DAV-Sicherheitsforschung hat (Part 3, Abschn. 7, Gl. 7.1, S. 24) mit `m = 82 kg`,
+`v₀ = 9,185 m/s` (⇒ `h = 4,30 m`), `L = 10,35 m` und `ρ = 1,46` gemessen:
+`F_R ≈ 4,4–4,5 kN`, `F_S ≈ 3,0 kN`, `F_U ≈ 7,4–7,5 kN` (Fig. 7-1, S. 24, Kurvenablesung).
+
+Mit dem Preset „mittel" (`M = 20 kN`) und `c = 0,68` rechnet die App `F_R ≈ 4,55 kN`,
+`F_S ≈ 3,09 kN`, `F_U ≈ 7,64 kN` — alle drei innerhalb von rund 5 % der Messwerte. Der
+Test `DAV-Experiment: …` prüft die Toleranzbänder `F_R ∈ [4,3; 4,8]`,
+`F_S ∈ [2,8; 3,3]`, `F_U ∈ [7,1; 8,0] kN`.
+
+## Gespeicherter Zustand (localStorage)
+
+Schlüssel `sturzfaktor.v1`, unverändert. **Migrationspolitik: keine Zwangsmigration.**
+Ein Altstand ohne die neuen Felder wird unverändert geladen; fehlende Schlüssel behalten
+die Vorgaben aus dem HTML (`s = δ = m₀ = 0`), und ein vom Nutzer selbst gesetztes `c`
+bleibt erhalten — auch wenn es der alten Voreinstellung entspricht. Nur Werksvorgabe und
+„Zurücksetzen" liefern `c = 0,68`. Neue Stände tragen zusätzlich `schema: 2`, damit eine
+spätere Migration bewusst entschieden werden kann.
+
+## Quellen
+
+- U. Leuthäusser: *Physics of climbing ropes – part 3: viscous and dry friction combined,
+  rope control and experiments*, English Version 1, 2. Juli 2012, www.SigmaDeWe.com,
+  © Leuthäusser Systemanalysen (29 Seiten). Alle Gleichungs- und Seitenangaben oben
+  beziehen sich auf dieses Papier.
+- EN 892 / UIAA 101 für Normsturz-Masse, Normsturz-Sturzfaktor und Fangstoßgrenze.
 
 ## Struktur
 

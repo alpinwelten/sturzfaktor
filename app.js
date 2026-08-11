@@ -1,17 +1,28 @@
 // app.js — UI-Wiring für den Sturzfaktor-/Fangstoß-Rechner.
 // Live-Recalc bei jeder Eingabe, Slider↔Feld-Sync, Stepper, Modul-Presets,
 // optionale Modul-Rückrechnung aus dem UIAA-Fangstoß, Persistenz, PWA-Install.
-import { computeSturz, modulAusUIAA, MODUL_PRESETS, DEFAULTS } from './js/engine.mjs';
+import {
+  computeSturz, computeDynamik, bewertung, rhoAusC,
+  modulAusUIAA, MODUL_PRESETS, DEFAULTS,
+} from './js/engine.mjs';
 
 const $ = (id) => document.getElementById(id);
+
+// Persistenz: Schlüssel bleibt `sturzfaktor.v1`.
+// Migrationspolitik: KEINE Zwangsmigration. Ein Altstand ohne die Part-3-Felder
+// (und mit einem älteren gespeicherten c) wird unverändert übernommen — fehlende
+// Schlüssel behalten schlicht die Vorgaben aus dem HTML, ein selbst gesetztes c
+// bleibt das des Nutzers. Nur Voreinstellung und „Zurücksetzen" liefern c = 0,68.
+// SCHEMA dokumentiert den Stand für spätere, dann bewusst zu entscheidende Migrationen.
 const STORE = 'sturzfaktor.v1';
+const SCHEMA = 2;
 
 // Zuletzt manuell gesetztes Seilmodul – wird beim UIAA-Modus zwischengespeichert
 // und beim Zurückschalten wiederhergestellt (statt mit dem abgeleiteten Wert zu überschreiben).
 let manualM = String(DEFAULTS.M);
 
-const NUM_FIELDS = ['in-m', 'in-h', 'in-L', 'in-M', 'in-uiaa', 'in-c'];
-const SLIDERS = ['sl-m', 'sl-h', 'sl-L'];
+const NUM_FIELDS = ['in-m', 'in-h', 'in-L', 'in-M', 'in-uiaa', 'in-c', 'in-s', 'in-delta', 'in-m0'];
+const SLIDERS = ['sl-m', 'sl-h', 'sl-L', 'sl-s', 'sl-delta', 'sl-m0'];
 
 // ---- de-DE-Formatierung -----------------------------------------------------
 const fmt = (n, dmin = 0, dmax = 2) =>
@@ -51,6 +62,7 @@ function gatherInput() {
   return {
     m: num('in-m'), h: num('in-h'), L: num('in-L'),
     M, c: num('in-c'),
+    s: num('in-s'), delta: num('in-delta'), m0: num('in-m0'),
     _uiaaOn: uiaaOn, _derivedM: derivedM,
   };
 }
@@ -130,13 +142,99 @@ function render(persist = true) {
   $('r-anker').textContent = fmtKN(r.ankerkN);
   $('r-sicherer').textContent = fmtKN(r.sichererkN);
 
-  // Erweitert: c-Anzeige
+  // Erweitert: c-Anzeige (inkl. Umrechnung auf den Reibungsparameter ρ = 1/c)
   const c = Number.isFinite(num('in-c')) ? num('in-c') : DEFAULTS.c;
+  const rho = rhoAusC(c);
   $('c-val').textContent = fmt(c, 2, 2);
   $('c-note').textContent =
-    `Anker = ${fmt(1 + c, 2, 2)}·F · reibungsfrei (c=1): 2·F`;
+    `Anker = ${fmt(1 + c, 2, 2)}·F · ρ = 1/c = ${rho == null ? '∞' : fmt(rho, 2, 2)} · reibungsfrei (c=1): 2·F`;
+
+  renderDynamik(input, r);
 
   if (persist) save();
+}
+
+// ---- Dynamik-Sektion (Part 3) ----------------------------------------------
+function setHint(el, text, tone) {
+  if (!text) { el.hidden = true; return; }
+  el.hidden = false;
+  el.textContent = text;
+  if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
+}
+
+// „−9,8 % ggü. 4,41 kN" bzw. „unverändert"
+function vergleich(prozent, basiskN) {
+  if (prozent == null || basiskN == null) return '';
+  if (Math.abs(prozent) < 0.05) return `unverändert ggü. ${fmt(basiskN, 1, 2)} kN`;
+  const vz = prozent > 0 ? '+' : '−';
+  return `${vz}${fmt(Math.abs(prozent), 1, 1)} % ggü. ${fmt(basiskN, 1, 2)} kN`;
+}
+
+function setErgebnis(valId, pillId, kN) {
+  $(valId).textContent = fmtKN(kN);
+  const note = bewertung(kN);
+  const pill = $(pillId);
+  pill.textContent = note?.stufe ?? '—';
+  setStufe(pill, note?.klasse ?? null);
+}
+
+function renderDynamik(input, basis) {
+  const d = computeDynamik(input);
+  const b = d.basiskN;
+
+  // --- Seildurchlauf (Gl. 6.10) ---
+  setErgebnis('r-dl', 'r-dl-stufe', d.durchlauf.kN);
+  $('r-dl-sub').textContent = d.in.s <= 0
+    ? 's = 0 m · unverändert'
+    : `s = ${fmt(d.in.s, 1, 2)} m · ${vergleich(d.durchlauf.aenderungProzent, b)}`;
+
+  if (basis.faktorUngueltig) {
+    setHint($('dl-hint'), 'Ausgegebenes Seil muss > 0 sein.', 'krit');
+  } else if (d.durchlauf.ueberGueltigkeit) {
+    setHint($('dl-hint'), 'Über 1 m Durchlauf: Gl. 6.10 ist nur bis s = 1 m ausgewiesen, und laut '
+      + 'Paper (S. 22) tritt darüber keine nennenswerte zusätzliche Reduktion mehr ein. '
+      + 'Angezeigt wird deshalb der Wert bei s = 1 m.', null);
+  } else if (d.durchlauf.gesaettigt && d.durchlauf.sMin != null) {
+    setHint($('dl-hint'), `Rechnerisches Optimum bereits bei ${fmt(d.durchlauf.sMin, 1, 2)} m erreicht – `
+      + 'mehr Durchlauf senkt den Fangstoß in diesem Modell nicht weiter.', 'info');
+  } else {
+    setHint($('dl-hint'), null);
+  }
+
+  // --- Schlappseil (Gl. 6.12) ---
+  setErgebnis('r-sl', 'r-sl-stufe', d.schlapp.kN);
+  $('r-sl-sub').textContent = !d.schlapp.aktiv || d.schlapp.fEff == null
+    ? 'δ = 0 m · unverändert'
+    : `f_eff = ${fmt(d.schlapp.fEff, 2, 2)} · δ/L = ${fmt(d.schlapp.deltaProL, 2, 2)} · `
+      + vergleich(d.schlapp.aenderungProzent, b);
+
+  if (!d.schlapp.aktiv || d.f == null) {
+    setHint($('sl-hint'), null);
+  } else if (d.schlapp.erhoehtFangstoss) {
+    setHint($('sl-hint'), 'Sturzfaktor unter 1: Schlappseil ERHÖHT hier den Fangstoß – '
+      + 'in Halle und Klettergarten also vermeiden (Part 3, S. 21).', null);
+  } else {
+    setHint($('sl-hint'), 'Sturzfaktor ab 1: rechnerisch senkt Schlappseil den Fangstoß – '
+      + 'in Einseillängen-Routen ist f > 1 aber gar nicht möglich (Part 3, S. 21).', 'info');
+  }
+
+  // --- Körpersicherung (S. 21) ---
+  if (!d.koerper.aktiv) {
+    $('r-ks').textContent = '—';
+    const pill = $('r-ks-stufe');
+    pill.textContent = 'aus';
+    setStufe(pill, null);
+    $('r-ks-sub').textContent = 'm₀ = 0 · Sicherung am fixen Punkt';
+    setHint($('ks-hint'), null);
+  } else {
+    setErgebnis('r-ks', 'r-ks-stufe', d.koerper.kN);
+    $('r-ks-sub').textContent =
+      `m_red = ${fmt(d.koerper.mRed, 1, 1)} kg · ${vergleich(d.koerper.aenderungProzent, b)}`;
+    setHint($('ks-hint'), d.koerper.guenstiger
+      ? null
+      : 'Modellgrenze: das Näherungsmodell rechnet mit 2·g statt g und liegt für sehr große m₀ '
+        + 'über der Fixpunkt-Formel – dort ist der Vergleich nicht mehr aussagekräftig.', 'info');
+  }
 }
 
 function setStufe(el, klasse) {
@@ -154,7 +252,7 @@ function markActivePreset(M) {
 // ---- Persistenz -------------------------------------------------------------
 function save() {
   try {
-    const data = { uiaaOn: $('uiaa-on').checked };
+    const data = { schema: SCHEMA, uiaaOn: $('uiaa-on').checked };
     for (const id of NUM_FIELDS) data[id] = $(id).value;
     localStorage.setItem(STORE, JSON.stringify(data));
   } catch { /* Speicher blockiert -> egal */ }
@@ -185,7 +283,8 @@ function applyStep(targetId, delta) {
   const el = $(targetId);
   const cur = Number.isFinite(num(targetId)) ? num(targetId) : 0;
   const min = el.min !== '' ? Number(el.min) : -Infinity;
-  let next = Math.max(min, cur + delta);
+  const max = el.max !== '' ? Number(el.max) : Infinity;
+  let next = Math.min(max, Math.max(min, cur + delta));
   // Saubere Dezimalstellen (Gleitkomma-Rauschen vermeiden)
   next = Math.round(next * 1000) / 1000;
   el.value = String(next);
@@ -199,6 +298,9 @@ function resetDefaults() {
   $('in-M').value = DEFAULTS.M;
   $('in-uiaa').value = DEFAULTS.uiaa;
   $('in-c').value = DEFAULTS.c;
+  $('in-s').value = DEFAULTS.s;
+  $('in-delta').value = DEFAULTS.delta;
+  $('in-m0').value = DEFAULTS.m0;
   $('uiaa-on').checked = false;
   manualM = String(DEFAULTS.M);
   syncSlidersFromFields();

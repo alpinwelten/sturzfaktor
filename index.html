@@ -115,9 +115,11 @@
       <summary>Erweitert</summary>
       <div class="disc-body">
         <div class="field">
-          <div class="field-top"><label for="in-c">Umlenk-Reibung <span class="mono">c</span></label><span class="unit" id="c-val">0,66</span></div>
-          <input id="in-c" class="slider wide" type="range" min="0" max="1" step="0.01" value="0.66" aria-describedby="c-note">
-          <p class="muted" id="c-note">Anker = 1,66·F · reibungsfrei (c=1): 2·F</p>
+          <div class="field-top"><label for="in-c">Umlenk-Reibung <span class="mono">c</span></label><span class="unit" id="c-val">0,68</span></div>
+          <input id="in-c" class="slider wide" type="range" min="0" max="1" step="0.01" value="0.68" aria-describedby="c-note">
+          <p class="muted" id="c-note">Anker = 1,68·F · reibungsfrei (c=1): 2·F</p>
+          <p class="field-hint">c = 1/ρ mit dem Reibungsparameter ρ = e<sup>μ·π</sup> der Umlenkung.
+            Voreinstellung c = 0,68 aus dem DAV-Messwert ρ = 1,46 (Leuthäusser, Part 3).</p>
         </div>
       </div>
     </details>
@@ -178,11 +180,116 @@
     </div>
   </section>
 
+  <!-- ======================= DYNAMIK (Part 3) ======================= -->
+  <section class="card dyn" aria-label="Dynamik-Effekte" aria-live="polite">
+
+    <div class="dyn-head">
+      <h2>Dynamik-Effekte</h2>
+      <p class="muted">Drei Einflüsse nach Leuthäusser, „Physics of climbing ropes – Part 3“ (2012),
+        jeweils gegen den oben berechneten Fangstoß gerechnet. Analytische Näherungen ohne innere
+        Seilreibung – Größenordnungen, keine Bemessungswerte.</p>
+    </div>
+
+    <!-- Seildurchlauf ------------------------------------------------ -->
+    <div class="dyn-block">
+      <div class="field">
+        <div class="field-top">
+          <label for="in-s">Seildurchlauf <span class="mono">s</span></label><span class="unit">m</span>
+        </div>
+        <div class="num">
+          <button class="step" type="button" data-step="-0.05" data-target="in-s" aria-label="weniger">−</button>
+          <input id="in-s" class="val" type="number" inputmode="decimal" min="0" max="1" step="0.05" value="0">
+          <button class="step" type="button" data-step="0.05" data-target="in-s" aria-label="mehr">+</button>
+        </div>
+        <input id="sl-s" class="slider" type="range" min="0" max="1" step="0.01" value="0" data-target="in-s" tabindex="-1" aria-hidden="true">
+        <p class="field-hint">Länge, die im Sicherungsgerät durchläuft. Gültig bis 1 m.</p>
+      </div>
+
+      <div class="dyn-out">
+        <span class="m-label">Fangstoß bei optimalem Durchlauf</span>
+        <div class="dyn-row">
+          <span class="m-val" id="r-dl">—</span>
+          <span class="pill" id="r-dl-stufe">—</span>
+        </div>
+        <span class="m-sub" id="r-dl-sub">s = 0 m · unverändert</span>
+      </div>
+
+      <p class="r-hint" id="dl-hint" hidden></p>
+      <p class="dyn-note"><strong>Theoretisches Optimum.</strong> Die Rechnung unterstellt eine ideal
+        gesteuerte Bremse, die genau am Kraftmaximum stoppt (Gl. 6.10). Reale Bremsgeräte lösen erst
+        beim Unterschreiten einer Kraftschwelle aus und bleiben deutlich über dieser Kurve
+        (Part 3, Fig. 7-9). Das ist keine Empfehlung, Seil durchlaufen zu lassen.</p>
+    </div>
+
+    <!-- Schlappseil -------------------------------------------------- -->
+    <div class="dyn-block">
+      <div class="field">
+        <div class="field-top">
+          <label for="in-delta">Schlappseil <span class="mono">δ</span></label><span class="unit">m</span>
+        </div>
+        <div class="num">
+          <button class="step" type="button" data-step="-0.1" data-target="in-delta" aria-label="weniger">−</button>
+          <input id="in-delta" class="val" type="number" inputmode="decimal" min="0" max="3" step="0.1" value="0">
+          <button class="step" type="button" data-step="0.1" data-target="in-delta" aria-label="mehr">+</button>
+        </div>
+        <input id="sl-delta" class="slider" type="range" min="0" max="3" step="0.05" value="0" data-target="in-delta" tabindex="-1" aria-hidden="true">
+        <p class="field-hint">Loses Seil vor dem Sturz. Näherung für kleine δ/L (Gl. 6.12).</p>
+      </div>
+
+      <div class="dyn-out">
+        <span class="m-label">Fangstoß mit Schlappseil</span>
+        <div class="dyn-row">
+          <span class="m-val" id="r-sl">—</span>
+          <span class="pill" id="r-sl-stufe">—</span>
+        </div>
+        <span class="m-sub" id="r-sl-sub">f<sub>eff</sub> = f + (1−f)·δ/L</span>
+      </div>
+
+      <p class="r-hint" id="sl-hint" hidden></p>
+    </div>
+
+    <!-- Körpersicherung ---------------------------------------------- -->
+    <div class="dyn-block">
+      <div class="field">
+        <div class="field-top">
+          <label for="in-m0">Körpersicherung – Masse Sichernder <span class="mono">m₀</span></label><span class="unit">kg</span>
+        </div>
+        <div class="num">
+          <button class="step" type="button" data-step="-5" data-target="in-m0" aria-label="weniger">−</button>
+          <input id="in-m0" class="val" type="number" inputmode="decimal" min="0" max="200" step="5" value="0">
+          <button class="step" type="button" data-step="5" data-target="in-m0" aria-label="mehr">+</button>
+        </div>
+        <input id="sl-m0" class="slider" type="range" min="0" max="200" step="1" value="0" data-target="in-m0" tabindex="-1" aria-hidden="true">
+        <p class="field-hint">0 = aus (Sicherung am fixen Punkt). Sonst: Gerät am Gurt, der Sichernde
+          wird mit hochgezogen (Fig. 6-5).</p>
+      </div>
+
+      <div class="dyn-out">
+        <span class="m-label">Fangstoß bei Körpersicherung</span>
+        <div class="dyn-row">
+          <span class="m-val" id="r-ks">—</span>
+          <span class="pill" id="r-ks-stufe">—</span>
+        </div>
+        <span class="m-sub" id="r-ks-sub">m<sub>red</sub> = m·m₀/(m₀+m)</span>
+      </div>
+
+      <p class="r-hint" id="ks-hint" hidden></p>
+    </div>
+
+    <p class="dyn-note"><strong>Modellgrenzen.</strong> Alle drei Rechnungen benutzen den linearen
+      Oszillator ohne innere Seilreibung; die Effekte werden einzeln und nicht kombiniert gezeigt.
+      Die reale innere Reibung nimmt zusätzlich Energie auf – das Paper zeigt sie nur in einer
+      vollständigen Simulation, die diese App bewusst nicht enthält.</p>
+  </section>
+
   <footer class="foot">
     <p class="mono">F = m·g + √( (m·g)² + 2·m·g·M·f )</p>
-    <p class="muted">g = 9,81 m/s² · UIAA-Normsturz: 80 kg, Faktor 1,77, Grenze 12 kN.</p>
+    <p class="muted">g = 9,81 m/s² · UIAA-Normsturz: 80 kg, Faktor 1,77, Grenze 12 kN ·
+      c = 1/ρ, Voreinstellung 0,68 aus ρ = 1,46 (DAV).</p>
     <p class="muted">Lehr- und Abschätzungswerkzeug – keine Bemessung realer Sicherungssysteme.
       Reibung, Knoten, dynamisches Sichern &amp; Körperdämpfung senken die realen Kräfte deutlich.</p>
+    <p class="muted">Dynamik-Formeln: U. Leuthäusser, <em>Physics of climbing ropes – part 3</em>,
+      2012, www.SigmaDeWe.com.</p>
   </footer>
 
 </main>

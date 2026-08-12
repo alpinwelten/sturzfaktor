@@ -117,7 +117,8 @@
         <div class="field">
           <div class="field-top"><label for="in-c">Umlenk-Reibung <span class="mono">c</span></label><span class="unit" id="c-val">0,68</span></div>
           <input id="in-c" class="slider wide" type="range" min="0" max="1" step="0.01" value="0.68" aria-describedby="c-note">
-          <p class="muted" id="c-note">Anker = 1,68·F · reibungsfrei (c=1): 2·F</p>
+          <p class="muted c-note" id="c-note"><span id="c-note-live">Anker = 1,68·F · ρ = 1/c = 1,47</span>
+            <span>reibungsfrei (c = 1): 2·F</span></p>
           <p class="field-hint">c = 1/ρ mit dem Reibungsparameter ρ = e<sup>μ·π</sup> der Umlenkung.
             Voreinstellung c = 0,68 aus dem DAV-Messwert ρ = 1,46 (Leuthäusser, Part 3).</p>
         </div>
@@ -185,7 +186,6 @@
     <details class="disc dyn-disc" id="disc-dyn">
       <summary>
         <span class="disc-label">Dynamik-Effekte</span>
-        <span class="disc-sep" aria-hidden="true">—</span>
         <span class="disc-state" id="dyn-state">aus</span>
       </summary>
       <div class="disc-body">

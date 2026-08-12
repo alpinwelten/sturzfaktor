@@ -15,7 +15,8 @@ oberste Zwischensicherung und Sicherer.
   aus dem **UIAA-Fangstoß** des Seil-Datenblatts
 - **Dynamik-Effekte** nach Leuthäusser Part 3: Seildurchlauf `s`, Schlappseil `δ`,
   Körpersicherung `m₀` – einklappbare Karte, standardmäßig zu; die Summary-Zeile zeigt
-  den Zustand (`aus` bzw. die aktiven Werte). Beim Laden öffnet sie sich automatisch,
+  bei **geschlossener** Karte den Zustand (`aus` bzw. die aktiven Werte) und bei offener
+  Karte nur den Titel. Beim Laden öffnet sie sich automatisch,
   wenn ein Effekt aktiv ist (`s > 0`, `δ > 0` oder `m₀ > 0`); der Auf/Zu-Zustand selbst
   wird nicht gespeichert. Jeder Effekt wird **einzeln** gegen den Fangstoß oben
   gerechnet – die drei Werte sind nicht kombinierbar
@@ -32,11 +33,20 @@ oberste Zwischensicherung und Sicherer.
   ein eingeschalteter Effekt, ohne den angezeigten Wert zu verändern, nennt dieselbe
   Zeile den Vergleich in Worten (`unverändert ggü. 4,41 kN`) – ein `4,41 → 4,41`
   entsteht nie
-- **Höhenkonstante Ergebnis-Kästen:** Trendzeile und Ergebniszeile sind so bemessen, dass
-  sie ab 360 px Breite einzeilig bleiben (Trendtext gekürzt auf `↓ −19,3 % ggü. Fangstoß
-  oben`, Ergebniszahl unter 401 px auf 22 px). Die Kastenhöhe ändert sich damit während
-  eines Reglerzugs nicht mehr – die Seitenhöhe nur noch, wenn ein Warn- oder
-  Optimum-Hinweis erscheint bzw. verschwindet
+- **Höhenkonstanz beim Reglerziehen (strukturell):** Jeder Text, der sich während eines
+  Reglerzugs ändert, ist einzeilig erzwungen – `white-space: nowrap` plus
+  `text-overflow: ellipsis`, Trendzeile und Formel-Unterzeilen zusätzlich auf feste
+  Zeilenhöhe. Betroffen sind Kopfzeile der Dynamik-Karte, Ergebniszeile (Wert + Badge,
+  `flex-wrap: nowrap`), Trendzeile, Formel-Unterzeilen, die Metrik-Unterzeilen oben, die
+  Modul-Rückrechnung und die `c`-Notiz (zwei feste Zeilen statt Fließtext). Damit hängt
+  keine Höhe mehr an Glyphenbreiten, Systemschrift oder Text-Zoom; reicht der Platz
+  nicht, wird gekürzt statt umgebrochen. Zusätzlich wird die Zustandszeile in der
+  Kopfzeile bei **offener** Schublade gar nicht mehr fortgeschrieben (sie ist dort
+  ausgeblendet) – oberhalb der Regler passiert beim Ziehen also nichts mehr; beim
+  Zuklappen wird sie nachgetragen. Die Seitenhöhe ändert sich nur noch, wenn ein Warn-
+  oder Optimum-Hinweis erscheint bzw. verschwindet. Hinweistexte dürfen weiter umbrechen,
+  enthalten dafür aber keine pro Tick wechselnden Zahlwerte mehr (die Sättigungslänge
+  `Optimum ab 0,27 m` steht in der einzeiligen Unterzeile)
 - Installierbar & offline (Service Worker)
 
 ## Formeln

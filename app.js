@@ -152,8 +152,11 @@ function render(persist = true) {
   const c = Number.isFinite(num('in-c')) ? num('in-c') : DEFAULTS.c;
   const rho = rhoAusC(c);
   $('c-val').textContent = fmt(c, 2, 2);
-  $('c-note').textContent =
-    `Anker = ${fmt(1 + c, 2, 2)}·F · ρ = 1/c = ${rho == null ? '∞' : fmt(rho, 2, 2)} · reibungsfrei (c=1): 2·F`;
+  // Nur die erste, mitlaufende Zeile wird geschrieben; die zweite steht fest im
+  // HTML. Beide Zeilen sind einzeilig erzwungen (styles.css .c-note), damit der
+  // wechselnde ρ-Wert die Höhe der Notiz nicht verändern kann.
+  $('c-note-live').textContent =
+    `Anker = ${fmt(1 + c, 2, 2)}·F · ρ = 1/c = ${rho == null ? '∞' : fmt(rho, 2, 2)}`;
 
   renderDynamik(input, r);
 
@@ -253,21 +256,38 @@ function dynZustand(d) {
   return teile.length ? teile.join(' · ') : 'aus';
 }
 
+// Der Zustandstext steht ÜBER den Reglern. Würde er beim Ziehen mitlaufen,
+// könnte jede Änderung oberhalb des Fingers die Seite verschieben — genau das
+// war der gemeldete Effekt („das ganze Bild vibriert"). Deshalb:
+// Bei offener Schublade wird er gar nicht mehr fortgeschrieben (und ist per CSS
+// ausgeblendet, weil derselbe Zustand dann ausführlich darunter steht).
+// Geschrieben wird nur bei geschlossener Karte und einmal beim Zuklappen.
+let dynZustandText = 'aus';
+function setDynZustand(text) {
+  dynZustandText = text;
+  if (!$('disc-dyn').open) $('dyn-state').textContent = text;
+}
+
 function renderDynamik(input, basis) {
   const d = computeDynamik(input);
   const b = d.basiskN;
 
-  $('dyn-state').textContent = dynZustand(d);
+  setDynZustand(dynZustand(d));
 
   // --- Seildurchlauf (Gl. 6.10) ---
   setErgebnis('r-dl', 'r-dl-stufe', d.durchlauf.kN);
   setVonZu('r-dl', 'r-dl-trend', {
     aktiv: d.in.s > 0, basiskN: b, kN: d.durchlauf.kN, prozent: d.durchlauf.aenderungProzent,
   });
-  // Unterzeile trägt nur die Rechengröße — der Vergleich steht in der Trendzeile.
+  // Unterzeile trägt nur Rechengrößen — der Vergleich steht in der Trendzeile.
+  // Die Sättigungslänge steht hier und NICHT im Hinweistext darunter: Der Hinweis
+  // ist ein umbrechender Fließtext, dessen Zeilenzahl mit der Stellenzahl der Zahl
+  // kippen würde. Diese Unterzeile ist einzeilig erzwungen und damit höhenfest.
   $('r-dl-sub').textContent = d.in.s <= 0
     ? 's = 0 m · unverändert'
-    : `s = ${fmt(d.in.s, 1, 2)} m`;
+    : `s = ${fmt(d.in.s, 1, 2)} m`
+      + (d.durchlauf.gesaettigt && d.durchlauf.sMin != null
+        ? ` · Optimum ab ${fmt(d.durchlauf.sMin, 1, 2)} m` : '');
   // Optimum-Kennzeichnung nur zeigen, wenn wirklich Durchlauf gerechnet wird;
   // bei s > 0 ist sie Pflicht (Fig. 7-9: reale Bremsgeräte erreichen die Kurve nicht).
   $('dl-optimum').hidden = !(d.in.s > 0);
@@ -279,8 +299,10 @@ function renderDynamik(input, basis) {
       + 'Paper (S. 22) tritt darüber keine nennenswerte zusätzliche Reduktion mehr ein. '
       + 'Angezeigt wird deshalb der Wert bei s = 1 m.', null);
   } else if (d.durchlauf.gesaettigt && d.durchlauf.sMin != null) {
-    setHint($('dl-hint'), `Rechnerisches Optimum bereits bei ${fmt(d.durchlauf.sMin, 1, 2)} m erreicht – `
-      + 'mehr Durchlauf senkt den Fangstoß in diesem Modell nicht weiter.', 'info');
+    // Bewusst ohne Zahlwert: Der Text darf sich pro Regler-Tick nicht ändern,
+    // sonst kippt seine Zeilenzahl. Die Länge steht in der Unterzeile oben.
+    setHint($('dl-hint'), 'Rechnerisches Optimum bereits erreicht – mehr Durchlauf senkt '
+      + 'den Fangstoß in diesem Modell nicht weiter.', 'info');
   } else {
     setHint($('dl-hint'), null);
   }
@@ -473,6 +495,12 @@ function wire() {
   });
   // Reset
   $('btn-reset').addEventListener('click', resetDefaults);
+
+  // Zuklappen: Der beim Ziehen zurückgehaltene Zustand wird jetzt nachgetragen.
+  // (Kein Neurechnen nötig — der Text der letzten Berechnung liegt bereit.)
+  $('disc-dyn').addEventListener('toggle', () => {
+    if (!$('disc-dyn').open) $('dyn-state').textContent = dynZustandText;
+  });
 
   // App verlassen / Tab wechseln: ausstehenden Debounce nachziehen. Auf iOS ist
   // `visibilitychange` → hidden das letzte verlässliche Signal (pagehide als

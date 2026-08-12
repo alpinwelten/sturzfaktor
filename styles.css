@@ -182,7 +182,14 @@ main {
   margin: 0; font-size: 13px; color: var(--ink-2);
   font-variant-numeric: tabular-nums; background: var(--surface-2);
   padding: 8px 11px; border-radius: var(--r-sm); border: 1px solid var(--line);
+  /* trägt einen mitlaufenden Zahlwert -> einzeilig erzwungen (Höhen-Invariante) */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Die c-Notiz trägt zwei mitlaufende Zahlen (1+c und ρ = 1/c). Statt eines
+   umbrechenden Fließtexts zwei feste Zeilen, jede für sich nowrap: die Höhe
+   ist damit von Schriftbreite, Zoom und Stellenzahl unabhängig. */
+.c-note { display: flex; flex-direction: column; }
+.c-note > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 .reset {
   align-self: flex-start; border: 1px solid var(--line-2); background: var(--surface);
@@ -255,10 +262,27 @@ main {
   display: flex; flex-direction: column; gap: 3px;
 }
 .m-label { font-size: 11.5px; font-weight: 600; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
-.m-val { font-size: 22px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
-.m-sub { font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+/* HÖHEN-INVARIANTE (siehe Block „Höhenkonstanz" weiter unten): Wert- und
+   Formelzeilen tragen live mitlaufende Zahlen. Beide sind deshalb einzeilig
+   erzwungen — nicht „passt bei gemessener Breite", sondern strukturell über
+   nowrap; zu lang wird abgeschnitten (Ellipsis), nie umgebrochen. */
+.m-val {
+  font-size: 22px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums;
+  line-height: 1.1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.m-sub {
+  font-size: 11px; color: var(--ink-3); font-family: var(--mono);
+  line-height: 1.45; height: 1.45em; flex: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+/* line-height: 1 hält die Badge (10px + 2·2px Polster = 14px) unter der Zeilenhöhe
+   des Labels (11,5px · 1,45 = 16,7px). Beide Maße hängen nur an der Schriftgröße,
+   nicht an der Schriftart — damit kann das Ein-/Ausblenden der „extrem"-Badge die
+   Höhe der Metrik-Kachel nicht mehr um 2 px verändern. */
 .badge {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
+  line-height: 1;
   background: #8B1A1A; color: #fff; letter-spacing: .3px; text-transform: uppercase;
 }
 
@@ -268,11 +292,27 @@ main {
 .dyn { display: flex; flex-direction: column; gap: 16px; }
 /* Einzige Karteninhalt-Ebene: Trennlinie/Abstand der .disc hier nicht nötig. */
 .dyn-disc { border-top: 0; padding-top: 0; }
-.dyn-disc > summary { flex-wrap: wrap; row-gap: 2px; }
-.dyn-disc .disc-sep, .dyn-disc .disc-state {
-  font-size: 12px; font-weight: 600; color: var(--ink-2);
+/* Kopfzeile: NIE umbrechen. Der Zustandstext („s 0,5 m · δ 1,15 m · m₀ 80 kg")
+   wächst mit den Werten; brach er um, sprang die Kopfzeile von 20 auf 39 px —
+   und mit ihr die gesamte Seite unter dem ziehenden Finger. nowrap + Ellipsis
+   auf dem Zustandstext hält die Zeile bei jeder Schrift und jedem Zoom einzeilig
+   (die zweite Sicherung sitzt in app.js: bei offener Schublade wird der Text
+   überhaupt nicht mehr fortgeschrieben). */
+.dyn-disc > summary { flex-wrap: nowrap; }
+.dyn-disc .disc-label { flex: none; }
+/* Der frühere Gedankenstrich zwischen Titel und Zustand ist entfallen: Er kostete
+   samt Abstand 18 px, und die fehlten dem Zustandstext bei 360 px genau dort, wo
+   alle drei Effekte gesetzt sind (gemessen 149 px Text gegen 135 px Platz). Titel
+   und Zustand trennen sich schon über Farbe, Gewicht und Größe. */
+.dyn-disc .disc-state {
+  flex: 0 1 auto; min-width: 0; margin-left: 4px;
+  font-size: 11.5px; font-weight: 600; color: var(--ink-2);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Offene Schublade: Der Zustand steht dann ausführlich in den Blöcken darunter.
+   Ausblenden heißt, dass oberhalb der Regler beim Ziehen nichts mehr passiert. */
+.dyn-disc[open] .disc-state { display: none; }
 .dyn-disc .disc-body { gap: 18px; }
 .dyn-intro { margin: 0; }
 /* Jeder Effekt ist eine geschlossene Unterkarte: Rahmen, Radius und eigener
@@ -307,41 +347,48 @@ main {
 .dyn-out {
   display: flex; flex-direction: column; gap: 3px;
   background: var(--accent-soft); border: 1px solid var(--accent);
-  border-radius: var(--r-md); padding: 11px 12px;
+  border-radius: var(--r-md); padding: 11px;
 }
 .dyn-out .m-sub { color: var(--ink-2); }
-.dyn-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
-.dyn-out .m-val { font-size: 26px; min-width: 0; }
-/* Schmale Geräte: Ergebniszahl und Status-Badge müssen in EINE Zeile passen.
-   Bei 26 px wird „4,41 → 4,43 kN" + Badge „DEUTLICH" 251,6 px breit und sprengt
-   die 242 px Innenbreite bei 360 px Viewport — die Badge klappt dann je nach
-   Stellenzahl des Werts um und der Ergebnis-Kasten wächst um 31 px. Mit der
-   Basisgröße der Sekundär-Metriken (22 px) bleibt die Zeile bis 360 px einzeilig
-   (gemessen 228,7 px, ungünstigste Wert-/Badge-Paarung 233,6 px). Ab 401 px
-   trägt 26 px wieder mit Reserve (257,9 px gegen 312 px bei 430 px). */
+/* ---- Höhenkonstanz der Ergebniszeile ----
+   Wert („4,41 → 3,56 kN") und Status-Badge stehen IMMER nebeneinander: die Zeile
+   darf nicht mehr umbrechen (flex-wrap: nowrap), und der Wert selbst ist über
+   .m-val einzeilig erzwungen. Reicht der Platz nicht, wird gekürzt statt
+   umbrochen. Das ist der Unterschied zur bisherigen Lösung: Die hielt die Zeile
+   nur, solange die gemessene Textbreite passte, und brach mit anderen
+   Glyphenbreiten (iOS-Systemschrift, Text-Zoom) doch um — dann wuchs der Kasten
+   mitten im Reglerzug um 31 px. Jetzt ist die Einzeiligkeit strukturell
+   erzwungen und von der Schriftmetrik unabhängig. */
+.dyn-row { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 8px; }
+.dyn-row .pill { flex: none; }
+.dyn-out .m-val { font-size: 26px; }
+/* Schmale Geräte: kleinere Ergebniszahl, damit Wert und Badge im Normalfall
+   ohne Kürzung nebeneinander stehen (gemessen 228,7 px gegen 242 px Innenbreite
+   bei 360 px Viewport). Diese Staffel ist jetzt reine Optik — die Höhe hängt
+   nicht mehr daran, weil nichts mehr umbrechen kann. */
 @media (max-width: 400px) {
   .dyn-out .m-val { font-size: 22px; }
 }
 /* Von→Zu in der Ergebniszeile: „4,41 → 3,56 kN" — Basiswert klein und gedämpft
-   vor dem neuen Wert, Einheit nur einmal am Ende. */
+   vor dem neuen Wert, Einheit nur einmal am Ende. Bewusst inline (kein Flexbox):
+   nur so sitzen kleine und große Zahl auf derselben Schriftlinie. */
 .dd-von { font-size: .62em; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
 /* Richtungszeile: Pfeil + Prozent, eingefärbt mit den Ampel-Tokens des Bestands
    (niedriger = --gut, höher = --hoch aus der Warn-/Rot-Familie). Keine neuen Farben.
-   min-height = genau eine Zeile (12,5px · 1,35): Der Platz steht auch im
-   inaktiven Zustand, damit der Ergebnis-Kasten beim Übergang 0 ↔ 0,05 nicht um
-   eine Zeilenhöhe wächst. Die Zeile ist ein Flex-Item von .dyn-out und damit
-   blockartig — min-height greift.
-   Die reservierte EINE Zeile trägt nur, solange der Text auch wirklich einzeilig
-   bleibt. Deshalb ist er bewusst kurz gehalten („↓ −19,3 % ggü. Fangstoß oben",
-   app.js): gemessen 182,7 px einstellig bis 207,3 px vierstellig gegen 242 px
-   Innenbreite bei 360 px Viewport. Die frühere Langform („… gegenüber dem
-   Fangstoß oben", 251–268 px) brach je nach Stellenzahl des Prozentwerts um und
-   ließ den Kasten mitten im Ziehen um eine Zeilenhöhe springen. Dieselbe Zeile
-   trägt den Ersatztext ohne sichtbaren Wertunterschied („unverändert ggü.
-   12,34 kN", 165,5 px). Wer einen dieser Texte verlängert, muss die Messung
-   wiederholen. */
+   Höhe FEST auf genau eine Zeile (12,5px · 1,35) — nicht min-height, sondern
+   height plus overflow: hidden. Damit ist die Höhe unabhängig davon, wie breit
+   der Text bei der jeweiligen Schrift ausfällt: Er kann nicht mehr umbrechen
+   (nowrap) und selbst wenn er es könnte, bliebe die Zeile so hoch, wie sie ist.
+   Die frühere Fassung reservierte nur eine Mindesthöhe und verließ sich darauf,
+   dass der Text bei gemessener Breite einzeilig bleibt — mit anderen
+   Glyphenbreiten (iOS-Systemschrift, Text-Zoom) stimmte diese Messung nicht mehr
+   und der Kasten sprang mitten im Ziehen um eine Zeilenhöhe.
+   Der Platz steht auch im inaktiven Zustand, damit der Kasten beim Übergang
+   0 ↔ 0,05 nicht wächst. */
 .dyn-trend {
-  font-size: 12.5px; font-weight: 600; line-height: 1.35; min-height: 1.35em;
+  font-size: 12.5px; font-weight: 600; line-height: 1.35;
+  height: 1.35em; flex: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: var(--ink-2); font-variant-numeric: tabular-nums;
 }
 /* Platzhalter-Zustand: Der Platz bleibt reserviert, der Inhalt ist leer —

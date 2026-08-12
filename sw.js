@@ -1,12 +1,14 @@
 /* Service Worker – Offline-Betrieb für den Sturzfaktor-/Fangstoß-Rechner.
    Strategie: App-Shell beim Install vorgeladen; Inhalt (HTML/JS/CSS) network-first
    (damit Updates ohne Neuinstallation ankommen), übrige same-origin GETs cache-first. */
-/* v9: Höhenkonstanz auch auf schmalen Geräten – Trendzeile gekürzt (bleibt ab
-   360 px einzeilig, der Blindtext-Platzhalter entfällt), Vergleichstext aus der
-   Formel-Unterzeile in die reservierte Trendzeile, Ergebniszahl unter 401 px auf
-   22 px, damit Wert und Badge in einer Zeile bleiben – app.js/styles.css/README,
-   keine neuen Dateien, SHELL unverändert. */
-const VERSION = 'sturzfaktor-v9';
+/* v10: Höhenkonstanz strukturell statt gemessen. Alle Texte, die pro Regler-Tick
+   wechseln (Kopfzeile, Ergebniszeile, Trendzeile, Formel-Unterzeilen, c-Notiz,
+   Modul-Rückrechnung), sind einzeilig erzwungen (nowrap + Ellipsis) bzw. auf
+   feste Zeilenhöhe gesetzt; die Kopfzeile wird bei offener Schublade gar nicht
+   mehr fortgeschrieben. Damit hängt keine Höhe mehr an Glyphenbreiten oder
+   Text-Zoom – index.html/app.js/styles.css/README, keine neuen Dateien,
+   SHELL unverändert. */
+const VERSION = 'sturzfaktor-v10';
 const SHELL = [
   './',
   'index.html',

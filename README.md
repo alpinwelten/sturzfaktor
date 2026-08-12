@@ -17,7 +17,13 @@ oberste Zwischensicherung und Sicherer.
   Körpersicherung `m₀` – einklappbare Karte, standardmäßig zu; die Summary-Zeile zeigt
   den Zustand (`aus` bzw. die aktiven Werte). Beim Laden öffnet sie sich automatisch,
   wenn ein Effekt aktiv ist (`s > 0`, `δ > 0` oder `m₀ > 0`); der Auf/Zu-Zustand selbst
-  wird nicht gespeichert
+  wird nicht gespeichert. Jeder Effekt wird **einzeln** gegen den Fangstoß oben
+  gerechnet – die drei Werte sind nicht kombinierbar
+- **Von→Zu-Ergebniszeile:** greift ein Effekt, zeigt die Ergebniszeile
+  `Basiswert → neuer Wert` (Einheit einmal am Ende) und darunter Richtungspfeil samt
+  Prozentänderung – `↓` grün für niedriger, `↑` warnfarben für höher, beides aus den
+  vorhandenen Ampel-Tokens. Der Von-Wert ist immer der aktuelle Fangstoß von oben und
+  läuft bei jeder Eingabe mit; ohne wirksamen Effekt bleibt die Zeile aus
 - Installierbar & offline (Service Worker)
 
 ## Formeln

@@ -190,8 +190,9 @@
       </summary>
       <div class="disc-body">
 
-        <p class="muted dyn-intro">Drei Näherungen gegen den Fangstoß oben – nach Leuthäusser,
-          „Physics of climbing ropes – Part 3“ (2012).</p>
+        <p class="muted dyn-intro">Drei Näherungen nach Leuthäusser, „Physics of climbing ropes –
+          Part 3“ (2012). Jeder Effekt wird <strong>einzeln</strong> gegen den oben berechneten
+          Fangstoß gerechnet – die drei Werte sind nicht miteinander kombinierbar.</p>
 
         <!-- Seildurchlauf ------------------------------------------------ -->
         <div class="dyn-block">
@@ -211,9 +212,10 @@
           <div class="dyn-out">
             <span class="m-label">Fangstoß bei optimalem Durchlauf</span>
             <div class="dyn-row">
-              <span class="m-val" id="r-dl">—</span>
+              <span class="m-val" id="r-dl"><span class="dd-von" hidden></span><span class="dd-neu">—</span></span>
               <span class="pill" id="r-dl-stufe">—</span>
             </div>
+            <span class="dyn-trend" id="r-dl-trend" hidden></span>
             <span class="m-sub" id="r-dl-sub">s = 0 m · unverändert</span>
           </div>
 
@@ -242,9 +244,10 @@
           <div class="dyn-out">
             <span class="m-label">Fangstoß mit Schlappseil</span>
             <div class="dyn-row">
-              <span class="m-val" id="r-sl">—</span>
+              <span class="m-val" id="r-sl"><span class="dd-von" hidden></span><span class="dd-neu">—</span></span>
               <span class="pill" id="r-sl-stufe">—</span>
             </div>
+            <span class="dyn-trend" id="r-sl-trend" hidden></span>
             <span class="m-sub" id="r-sl-sub">f<sub>eff</sub> = f + (1−f)·δ/L</span>
           </div>
 
@@ -270,9 +273,10 @@
           <div class="dyn-out">
             <span class="m-label">Fangstoß bei Körpersicherung</span>
             <div class="dyn-row">
-              <span class="m-val" id="r-ks">—</span>
+              <span class="m-val" id="r-ks"><span class="dd-von" hidden></span><span class="dd-neu">—</span></span>
               <span class="pill" id="r-ks-stufe">—</span>
             </div>
+            <span class="dyn-trend" id="r-ks-trend" hidden></span>
             <span class="m-sub" id="r-ks-sub">m<sub>red</sub> = m·m₀/(m₀+m)</span>
           </div>
 

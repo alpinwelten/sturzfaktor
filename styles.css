@@ -277,8 +277,19 @@ main {
   background: var(--surface-2); border: 1px solid var(--line);
   border-radius: var(--r-md); padding: 11px 13px;
 }
-.dyn-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.dyn-out .m-val { font-size: 26px; }
+.dyn-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.dyn-out .m-val { font-size: 26px; min-width: 0; }
+/* Von→Zu in der Ergebniszeile: „4,41 → 3,56 kN" — Basiswert klein und gedämpft
+   vor dem neuen Wert, Einheit nur einmal am Ende. */
+.dd-von { font-size: .62em; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+/* Richtungszeile: Pfeil + Prozent, eingefärbt mit den Ampel-Tokens des Bestands
+   (niedriger = --gut, höher = --hoch aus der Warn-/Rot-Familie). Keine neuen Farben. */
+.dyn-trend {
+  font-size: 12.5px; font-weight: 600; line-height: 1.35;
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.dyn-trend[data-richtung="ab"]  { color: var(--gut); }
+.dyn-trend[data-richtung="auf"] { color: var(--hoch); }
 .dyn-note {
   margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-3);
   border-left: 2px solid var(--line-2); padding-left: 10px;

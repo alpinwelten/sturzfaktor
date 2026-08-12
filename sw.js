@@ -1,9 +1,10 @@
 /* Service Worker – Offline-Betrieb für den Sturzfaktor-/Fangstoß-Rechner.
    Strategie: App-Shell beim Install vorgeladen; Inhalt (HTML/JS/CSS) network-first
    (damit Updates ohne Neuinstallation ankommen), übrige same-origin GETs cache-first. */
-/* v5: Dynamik-Karte einklappbar (details.disc, standardmäßig zu) in
-   index.html/app.js/styles.css – keine neuen Dateien, SHELL unverändert. */
-const VERSION = 'sturzfaktor-v5';
+/* v6: Von→Zu-Zeile in den drei Dynamik-Ergebnissen (Basiswert → neuer Wert,
+   Richtungspfeil, Prozent) und Einzeln-Klarstellung in der Intro-Zeile –
+   index.html/app.js/styles.css, keine neuen Dateien, SHELL unverändert. */
+const VERSION = 'sturzfaktor-v6';
 const SHELL = [
   './',
   'index.html',

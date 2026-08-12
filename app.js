@@ -28,10 +28,16 @@ const SLIDERS = ['sl-m', 'sl-h', 'sl-L', 'sl-s', 'sl-delta', 'sl-m0'];
 const fmt = (n, dmin = 0, dmax = 2) =>
   Number(n).toLocaleString('de-DE', { minimumFractionDigits: dmin, maximumFractionDigits: dmax });
 
-function fmtKN(kN, hard = 2) {
+// Zahlwert einer Kraft ohne Einheit — Basis für fmtKN und die Von→Zu-Zeile,
+// damit „von" und „zu" garantiert gleich formatiert sind.
+function fmtWert(kN, hard = 2) {
   if (kN == null || !Number.isFinite(kN)) return '—';
   const d = kN >= 10 ? Math.max(1, hard - 1) : hard;
-  return fmt(kN, 1, d) + ' kN';
+  return fmt(kN, 1, d);
+}
+function fmtKN(kN, hard = 2) {
+  const t = fmtWert(kN, hard);
+  return t === '—' ? '—' : t + ' kN';
 }
 function fmtEnergie(J) {
   if (!Number.isFinite(J)) return '—';
@@ -170,12 +176,47 @@ function vergleich(prozent, basiskN) {
   return `${vz}${fmt(Math.abs(prozent), 1, 1)} % ggü. ${fmt(basiskN, 1, 2)} kN`;
 }
 
+// Anhang an die Formel-Unterzeile, solange er nicht leer ist.
+const anhang = (t) => (t ? ` · ${t}` : '');
+
+function setWert(valId, text) {
+  $(valId).querySelector('.dd-neu').textContent = text;
+}
+
 function setErgebnis(valId, pillId, kN) {
-  $(valId).textContent = fmtKN(kN);
+  setWert(valId, fmtKN(kN));
   const note = bewertung(kN);
   const pill = $(pillId);
   pill.textContent = note?.stufe ?? '—';
   setStufe(pill, note?.klasse ?? null);
+}
+
+// Von→Zu-Darstellung „4,41 → 3,56 kN" plus Richtungspfeil und Prozentangabe.
+// Gezeigt nur bei wirklich aktivem Effekt UND sichtbar anderem Wert — nie „4,41 → 4,41".
+// Der Von-Wert ist der aktuelle Basis-Fangstoß von oben und läuft live mit.
+// Rückgabe: true, wenn die Zeile steht (dann trägt sie die Prozentangabe).
+function setVonZu(valId, trendId, { aktiv, basiskN, kN, prozent }) {
+  const von = $(valId).querySelector('.dd-von');
+  const trend = $(trendId);
+  const vonTxt = fmtWert(basiskN);
+  const zuTxt = fmtWert(kN);
+  const zeigen = !!aktiv && vonTxt !== '—' && zuTxt !== '—' && vonTxt !== zuTxt
+    && prozent != null && Number.isFinite(prozent);
+
+  if (!zeigen) {
+    von.hidden = true; von.textContent = '';
+    trend.hidden = true; trend.textContent = '';
+    trend.removeAttribute('data-richtung');
+    return false;
+  }
+  von.hidden = false;
+  von.textContent = `${vonTxt} → `;                   // U+2192, Trennabstand als Leerzeichen
+  const ab = prozent < 0;
+  trend.hidden = false;
+  trend.dataset.richtung = ab ? 'ab' : 'auf';         // ab -> --gut, auf -> --hoch
+  trend.textContent = `${ab ? '↓' : '↑'} ${ab ? '−' : '+'}`   // U+2193 / U+2191 / U+2212
+    + `${fmt(Math.abs(prozent), 1, 1)} % gegenüber dem Fangstoß oben`;
+  return true;
 }
 
 // Kompakte Zustandszeile für die eingeklappte Karte: aktive Effekte oder „aus".
@@ -195,9 +236,13 @@ function renderDynamik(input, basis) {
 
   // --- Seildurchlauf (Gl. 6.10) ---
   setErgebnis('r-dl', 'r-dl-stufe', d.durchlauf.kN);
+  const dlVonZu = setVonZu('r-dl', 'r-dl-trend', {
+    aktiv: d.in.s > 0, basiskN: b, kN: d.durchlauf.kN, prozent: d.durchlauf.aenderungProzent,
+  });
   $('r-dl-sub').textContent = d.in.s <= 0
     ? 's = 0 m · unverändert'
-    : `s = ${fmt(d.in.s, 1, 2)} m · ${vergleich(d.durchlauf.aenderungProzent, b)}`;
+    : `s = ${fmt(d.in.s, 1, 2)} m`
+      + (dlVonZu ? '' : anhang(vergleich(d.durchlauf.aenderungProzent, b)));
   // Optimum-Kennzeichnung nur zeigen, wenn wirklich Durchlauf gerechnet wird;
   // bei s > 0 ist sie Pflicht (Fig. 7-9: reale Bremsgeräte erreichen die Kurve nicht).
   $('dl-optimum').hidden = !(d.in.s > 0);
@@ -217,10 +262,14 @@ function renderDynamik(input, basis) {
 
   // --- Schlappseil (Gl. 6.12) ---
   setErgebnis('r-sl', 'r-sl-stufe', d.schlapp.kN);
+  const slVonZu = setVonZu('r-sl', 'r-sl-trend', {
+    aktiv: d.schlapp.aktiv && d.schlapp.fEff != null,
+    basiskN: b, kN: d.schlapp.kN, prozent: d.schlapp.aenderungProzent,
+  });
   $('r-sl-sub').textContent = !d.schlapp.aktiv || d.schlapp.fEff == null
     ? 'δ = 0 m · unverändert'
-    : `f_eff = ${fmt(d.schlapp.fEff, 2, 2)} · δ/L = ${fmt(d.schlapp.deltaProL, 2, 2)} · `
-      + vergleich(d.schlapp.aenderungProzent, b);
+    : `f_eff = ${fmt(d.schlapp.fEff, 2, 2)} · δ/L = ${fmt(d.schlapp.deltaProL, 2, 2)}`
+      + (slVonZu ? '' : anhang(vergleich(d.schlapp.aenderungProzent, b)));
 
   if (!d.schlapp.aktiv || d.f == null) {
     setHint($('sl-hint'), null);
@@ -234,7 +283,8 @@ function renderDynamik(input, basis) {
 
   // --- Körpersicherung (S. 21) ---
   if (!d.koerper.aktiv) {
-    $('r-ks').textContent = '—';
+    setWert('r-ks', '—');
+    setVonZu('r-ks', 'r-ks-trend', { aktiv: false });
     const pill = $('r-ks-stufe');
     pill.textContent = 'aus';
     setStufe(pill, null);
@@ -242,8 +292,11 @@ function renderDynamik(input, basis) {
     setHint($('ks-hint'), null);
   } else {
     setErgebnis('r-ks', 'r-ks-stufe', d.koerper.kN);
-    $('r-ks-sub').textContent =
-      `m_red = ${fmt(d.koerper.mRed, 1, 1)} kg · ${vergleich(d.koerper.aenderungProzent, b)}`;
+    const ksVonZu = setVonZu('r-ks', 'r-ks-trend', {
+      aktiv: true, basiskN: b, kN: d.koerper.kN, prozent: d.koerper.aenderungProzent,
+    });
+    $('r-ks-sub').textContent = `m_red = ${fmt(d.koerper.mRed, 1, 1)} kg`
+      + (ksVonZu ? '' : anhang(vergleich(d.koerper.aenderungProzent, b)));
     setHint($('ks-hint'), d.koerper.guenstiger
       ? null
       : 'Modellgrenze: das Näherungsmodell rechnet mit 2·g statt g und liegt für sehr große m₀ '

@@ -178,15 +178,29 @@ function setErgebnis(valId, pillId, kN) {
   setStufe(pill, note?.klasse ?? null);
 }
 
+// Kompakte Zustandszeile für die eingeklappte Karte: aktive Effekte oder „aus".
+function dynZustand(d) {
+  const teile = [];
+  if (d.in.s > 0) teile.push(`s ${fmt(d.in.s, 0, 2)} m`);
+  if (d.in.delta > 0) teile.push(`δ ${fmt(d.in.delta, 0, 2)} m`);
+  if (d.in.m0 > 0) teile.push(`m₀ ${fmt(d.in.m0, 0, 0)} kg`);
+  return teile.length ? teile.join(' · ') : 'aus';
+}
+
 function renderDynamik(input, basis) {
   const d = computeDynamik(input);
   const b = d.basiskN;
+
+  $('dyn-state').textContent = dynZustand(d);
 
   // --- Seildurchlauf (Gl. 6.10) ---
   setErgebnis('r-dl', 'r-dl-stufe', d.durchlauf.kN);
   $('r-dl-sub').textContent = d.in.s <= 0
     ? 's = 0 m · unverändert'
     : `s = ${fmt(d.in.s, 1, 2)} m · ${vergleich(d.durchlauf.aenderungProzent, b)}`;
+  // Optimum-Kennzeichnung nur zeigen, wenn wirklich Durchlauf gerechnet wird;
+  // bei s > 0 ist sie Pflicht (Fig. 7-9: reale Bremsgeräte erreichen die Kurve nicht).
+  $('dl-optimum').hidden = !(d.in.s > 0);
 
   if (basis.faktorUngueltig) {
     setHint($('dl-hint'), 'Ausgegebenes Seil muss > 0 sein.', 'krit');
@@ -265,6 +279,12 @@ function load() {
   } catch { /* defekt -> Defaults */ }
   // Manuelles Modul aus dem geladenen Zustand übernehmen (für UIAA-Umschaltung)
   manualM = $('in-M').value || String(DEFAULTS.M);
+}
+
+// Auf/Zu der Dynamik-Karte wird NICHT gespeichert, sondern aus der Aktivität
+// abgeleitet: Wer mit gesetztem s, δ oder m₀ zurückkommt, sieht die Karte offen.
+function oeffneDynamikWennAktiv() {
+  if (num('in-s') > 0 || num('in-delta') > 0 || num('in-m0') > 0) $('disc-dyn').open = true;
 }
 
 // ---- Slider ↔ Feld ----------------------------------------------------------
@@ -369,6 +389,7 @@ function pwa() {
 // ---- Start ------------------------------------------------------------------
 load();
 syncSlidersFromFields();
+oeffneDynamikWennAktiv();
 wire();
 pwa();
 render(false); // Init: noch nicht persistieren – Store erst nach echter Interaktion schreiben

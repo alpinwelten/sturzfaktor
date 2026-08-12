@@ -14,7 +14,10 @@ oberste Zwischensicherung und Sicherer.
 - **Seilmodul** per Preset (weich/mittel/steif) oder frei – plus optionale Rückrechnung
   aus dem **UIAA-Fangstoß** des Seil-Datenblatts
 - **Dynamik-Effekte** nach Leuthäusser Part 3: Seildurchlauf `s`, Schlappseil `δ`,
-  Körpersicherung `m₀`
+  Körpersicherung `m₀` – einklappbare Karte, standardmäßig zu; die Summary-Zeile zeigt
+  den Zustand (`aus` bzw. die aktiven Werte). Beim Laden öffnet sie sich automatisch,
+  wenn ein Effekt aktiv ist (`s > 0`, `δ > 0` oder `m₀ > 0`); der Auf/Zu-Zustand selbst
+  wird nicht gespeichert
 - Installierbar & offline (Service Worker)
 
 ## Formeln

@@ -129,6 +129,13 @@ bleibt erhalten — auch wenn es der alten Voreinstellung entspricht. Nur Werksv
 „Zurücksetzen" liefern `c = 0,68`. Neue Stände tragen zusätzlich `schema: 2`, damit eine
 spätere Migration bewusst entschieden werden kann.
 
+Geschrieben wird **entkoppelt vom Ziehen**: Rechnen und Anzeige laufen bei jedem
+Eingabe-Tick live, der Schreibvorgang selbst ist um 200 ms nachlaufend gebündelt
+(Trailing-Debounce). Abschließend geschrieben wird bei `change` (Zieh-Ende, Feld
+verlassen), bei „Zurücksetzen" sofort und beim Verlassen der App
+(`visibilitychange` → hidden, `pagehide`) — ein Wechsel mitten im Debounce-Fenster
+verliert also nichts.
+
 ## Quellen
 
 - U. Leuthäusser: *Physics of climbing ropes – part 3: viscous and dry friction combined,

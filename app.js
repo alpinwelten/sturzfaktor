@@ -157,7 +157,9 @@ function render(persist = true) {
 
   renderDynamik(input, r);
 
-  if (persist) save();
+  // Rechnen und Anzeigen laufen bei jedem Tick live mit; nur der Schreibvorgang
+  // in den localStorage wartet auf eine kurze Ruhepause (siehe saveSpaeter).
+  if (persist) saveSpaeter();
 }
 
 // ---- Dynamik-Sektion (Part 3) ----------------------------------------------
@@ -191,6 +193,20 @@ function setErgebnis(valId, pillId, kN) {
   setStufe(pill, note?.klasse ?? null);
 }
 
+// Platzhalter statt Entfernen: Der Platz der Von→Zu-/Trendzeile bleibt auch im
+// inaktiven Zustand reserviert (CSS: [data-leer] -> visibility: hidden), sonst
+// wächst der Ergebnis-Kasten beim Übergang 0 ↔ 0,05 um eine Zeile und die Seite
+// ruckt unter dem ziehenden Finger weg. Reserviert wird nur der Platz — der
+// Inhalt bleibt leer, ein „4,41 → 4,41" entsteht dadurch nie.
+function leerLassen(el) {
+  el.textContent = '';
+  el.dataset.leer = '';
+}
+function fuellen(el, text) {
+  el.textContent = text;
+  delete el.dataset.leer;
+}
+
 // Von→Zu-Darstellung „4,41 → 3,56 kN" plus Richtungspfeil und Prozentangabe.
 // Gezeigt nur bei wirklich aktivem Effekt UND sichtbar anderem Wert — nie „4,41 → 4,41".
 // Der Von-Wert ist der aktuelle Basis-Fangstoß von oben und läuft live mit.
@@ -204,18 +220,16 @@ function setVonZu(valId, trendId, { aktiv, basiskN, kN, prozent }) {
     && prozent != null && Number.isFinite(prozent);
 
   if (!zeigen) {
-    von.hidden = true; von.textContent = '';
-    trend.hidden = true; trend.textContent = '';
+    leerLassen(von);
+    leerLassen(trend);
     trend.removeAttribute('data-richtung');
     return false;
   }
-  von.hidden = false;
-  von.textContent = `${vonTxt} → `;                   // U+2192, Trennabstand als Leerzeichen
+  fuellen(von, `${vonTxt} → `);                       // U+2192, Trennabstand als Leerzeichen
   const ab = prozent < 0;
-  trend.hidden = false;
   trend.dataset.richtung = ab ? 'ab' : 'auf';         // ab -> --gut, auf -> --hoch
-  trend.textContent = `${ab ? '↓' : '↑'} ${ab ? '−' : '+'}`   // U+2193 / U+2191 / U+2212
-    + `${fmt(Math.abs(prozent), 1, 1)} % gegenüber dem Fangstoß oben`;
+  fuellen(trend, `${ab ? '↓' : '↑'} ${ab ? '−' : '+'}` // U+2193 / U+2191 / U+2212
+    + `${fmt(Math.abs(prozent), 1, 1)} % gegenüber dem Fangstoß oben`);
   return true;
 }
 
@@ -317,12 +331,36 @@ function markActivePreset(M) {
 }
 
 // ---- Persistenz -------------------------------------------------------------
+// Schreiben ist vom Ziehen entkoppelt: Ein Reglerzug feuert dutzende
+// input-Events pro Sekunde, jedes davon würde sonst ein synchrones
+// localStorage.setItem samt JSON.stringify auslösen — auf dem iPhone genug
+// Hauptthread-Zeit, um die Zieh-Geste stocken zu lassen. Trailing-Debounce:
+// gespeichert wird erst nach einer kurzen Ruhepause.
+const SAVE_DEBOUNCE_MS = 200;
+let saveTimer = null;
+
 function save() {
   try {
     const data = { schema: SCHEMA, uiaaOn: $('uiaa-on').checked };
     for (const id of NUM_FIELDS) data[id] = $(id).value;
     localStorage.setItem(STORE, JSON.stringify(data));
   } catch { /* Speicher blockiert -> egal */ }
+}
+// Verzögert speichern; jeder neue Tick verschiebt den Termin nach hinten.
+function saveSpaeter() {
+  if (saveTimer != null) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saveTimer = null; save(); }, SAVE_DEBOUNCE_MS);
+}
+// Sofort speichern und einen offenen Debounce verwerfen. Für Abschlüsse:
+// Zieh-Ende (change), „Zurücksetzen".
+function saveJetzt() {
+  if (saveTimer != null) { clearTimeout(saveTimer); saveTimer = null; }
+  save();
+}
+// Nur nachziehen, wenn wirklich etwas aussteht — für App-Verlassen/Tabwechsel,
+// damit ein Wechsel mitten im Debounce-Fenster keine Eingabe verliert.
+function saveFlush() {
+  if (saveTimer != null) saveJetzt();
 }
 function load() {
   try {
@@ -377,22 +415,27 @@ function resetDefaults() {
   $('uiaa-on').checked = false;
   manualM = String(DEFAULTS.M);
   syncSlidersFromFields();
-  render();
+  render(false);
+  saveJetzt();   // Zurücksetzen ist ein Abschluss – sofort in den Speicher
 }
 
 // ---- Verdrahtung ------------------------------------------------------------
 function wire() {
-  // Zahlenfelder
+  // Zahlenfelder. `change` (Feld verlassen, Enter, Zieh-Ende am c-Regler) ist
+  // der Abschluss-Save und beendet ein offenes Debounce-Fenster.
   for (const id of NUM_FIELDS) {
     $(id).addEventListener('input', () => { syncSlidersFromFields(); render(); });
+    $(id).addEventListener('change', () => saveJetzt());
   }
-  // Slider -> Feld
+  // Slider -> Feld. `change` feuert am Ende der Zieh-Geste – genau dort wird
+  // der beim Ziehen aufgeschobene Zustand endgültig geschrieben.
   for (const sid of SLIDERS) {
     $(sid).addEventListener('input', () => {
       const tgt = $(sid).dataset.target;
       $(tgt).value = $(sid).value;
       render();
     });
+    $(sid).addEventListener('change', () => saveJetzt());
   }
   // Stepper
   for (const btn of document.querySelectorAll('.step')) {
@@ -416,10 +459,19 @@ function wire() {
   $('uiaa-on').addEventListener('change', () => {
     if ($('uiaa-on').checked) { manualM = $('in-M').value; $('disc-uiaa').open = true; }
     else { $('in-M').value = manualM; }
-    render();
+    render(false);
+    saveJetzt();
   });
   // Reset
   $('btn-reset').addEventListener('click', resetDefaults);
+
+  // App verlassen / Tab wechseln: ausstehenden Debounce nachziehen. Auf iOS ist
+  // `visibilitychange` → hidden das letzte verlässliche Signal (pagehide als
+  // Rückfall für ältere WebKit-Stände); unload feuert dort nicht zuverlässig.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveFlush();
+  });
+  window.addEventListener('pagehide', () => saveFlush());
 }
 
 // ---- PWA --------------------------------------------------------------------

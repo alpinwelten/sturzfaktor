@@ -125,8 +125,15 @@ main {
 }
 .val::-webkit-outer-spin-button, .val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* Slider */
-.slider { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; }
+/* Slider
+   touch-action: none für ALLE Regler: iOS wertet eine begonnene Zieh-Geste
+   sonst nachträglich als Seiten-Scroll um, der Regler verliert den Finger und
+   die Seite ruckt weg („springt"). Ohne die Regel ist sauberes Ziehen auf dem
+   iPhone nicht zuverlässig möglich; gescrollt wird neben dem Regler. */
+.slider {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 26px;
+  background: transparent; touch-action: none;
+}
 .slider::-webkit-slider-runnable-track { height: 5px; border-radius: 3px; background: var(--line-2); }
 .slider::-moz-range-track { height: 5px; border-radius: 3px; background: var(--line-2); }
 .slider::-webkit-slider-thumb {
@@ -309,11 +316,25 @@ main {
    vor dem neuen Wert, Einheit nur einmal am Ende. */
 .dd-von { font-size: .62em; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
 /* Richtungszeile: Pfeil + Prozent, eingefärbt mit den Ampel-Tokens des Bestands
-   (niedriger = --gut, höher = --hoch aus der Warn-/Rot-Familie). Keine neuen Farben. */
+   (niedriger = --gut, höher = --hoch aus der Warn-/Rot-Familie). Keine neuen Farben.
+   min-height = genau eine Zeile (12,5px · 1,35): Der Platz steht auch im
+   inaktiven Zustand, damit der Ergebnis-Kasten beim Übergang 0 ↔ 0,05 nicht um
+   eine Zeilenhöhe wächst. Die Zeile ist ein Flex-Item von .dyn-out und damit
+   blockartig — min-height greift. */
 .dyn-trend {
-  font-size: 12.5px; font-weight: 600; line-height: 1.35;
+  font-size: 12.5px; font-weight: 600; line-height: 1.35; min-height: 1.35em;
   color: var(--ink-2); font-variant-numeric: tabular-nums;
 }
+/* Platzhalter-Zustand: Der Platz bleibt reserviert, der Inhalt ist leer —
+   visibility statt [hidden]/display:none, sonst springt der Block. Reservieren
+   heißt ausdrücklich NICHT „4,41 → 4,41" anzeigen: die Elemente sind leer. */
+.dd-von[data-leer], .dyn-trend[data-leer] { visibility: hidden; }
+/* Der reservierte Platz muss so viele Zeilen halten, wie der spätere Text
+   braucht — auf schmalen Geräten (≤ 375 px) bricht die Trendzeile zweizeilig um.
+   Deshalb reserviert ein unsichtbarer Blindtext gleicher Länge statt einer
+   festen Höhe: er wird nie gezeichnet (visibility der Elternzeile) und steht in
+   keinem textContent, hält aber bei jeder Breite genau die richtige Zeilenzahl. */
+.dyn-trend[data-leer]::before { content: "↑ +00,0 % gegenüber dem Fangstoß oben"; }
 .dyn-trend[data-richtung="ab"]  { color: var(--gut); }
 .dyn-trend[data-richtung="auf"] { color: var(--hoch); }
 .dyn-note {

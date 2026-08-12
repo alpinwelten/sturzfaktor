@@ -1,10 +1,11 @@
 /* Service Worker – Offline-Betrieb für den Sturzfaktor-/Fangstoß-Rechner.
    Strategie: App-Shell beim Install vorgeladen; Inhalt (HTML/JS/CSS) network-first
    (damit Updates ohne Neuinstallation ankommen), übrige same-origin GETs cache-first. */
-/* v7: Die drei Dynamik-Effekte stehen je in einer eigenen Unterkarte mit
-   Kopfzeile (Effektname + Beleg); Ergebnis-Kasten kontraststärker –
-   index.html/styles.css, keine neuen Dateien, SHELL unverändert. */
-const VERSION = 'sturzfaktor-v7';
+/* v8: Ruhiges Ziehen auf dem iPhone – touch-action: none auf allen Reglern,
+   localStorage-Schreiben trailing-debounced (Abschluss über change/Verlassen),
+   Von→Zu-/Trendzeile reserviert ihren Platz – app.js/index.html/styles.css,
+   keine neuen Dateien, SHELL unverändert. */
+const VERSION = 'sturzfaktor-v8';
 const SHELL = [
   './',
   'index.html',

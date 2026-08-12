@@ -28,7 +28,15 @@ oberste Zwischensicherung und Sicherer.
   `Basiswert → neuer Wert` (Einheit einmal am Ende) und darunter Richtungspfeil samt
   Prozentänderung – `↓` grün für niedriger, `↑` warnfarben für höher, beides aus den
   vorhandenen Ampel-Tokens. Der Von-Wert ist immer der aktuelle Fangstoß von oben und
-  läuft bei jeder Eingabe mit; ohne wirksamen Effekt bleibt die Zeile aus
+  läuft bei jeder Eingabe mit; ohne eingeschalteten Effekt bleibt die Zeile aus. Rechnet
+  ein eingeschalteter Effekt, ohne den angezeigten Wert zu verändern, nennt dieselbe
+  Zeile den Vergleich in Worten (`unverändert ggü. 4,41 kN`) – ein `4,41 → 4,41`
+  entsteht nie
+- **Höhenkonstante Ergebnis-Kästen:** Trendzeile und Ergebniszeile sind so bemessen, dass
+  sie ab 360 px Breite einzeilig bleiben (Trendtext gekürzt auf `↓ −19,3 % ggü. Fangstoß
+  oben`, Ergebniszahl unter 401 px auf 22 px). Die Kastenhöhe ändert sich damit während
+  eines Reglerzugs nicht mehr – die Seitenhöhe nur noch, wenn ein Warn- oder
+  Optimum-Hinweis erscheint bzw. verschwindet
 - Installierbar & offline (Service Worker)
 
 ## Formeln

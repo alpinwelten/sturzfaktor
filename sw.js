@@ -1,11 +1,12 @@
 /* Service Worker – Offline-Betrieb für den Sturzfaktor-/Fangstoß-Rechner.
    Strategie: App-Shell beim Install vorgeladen; Inhalt (HTML/JS/CSS) network-first
    (damit Updates ohne Neuinstallation ankommen), übrige same-origin GETs cache-first. */
-/* v8: Ruhiges Ziehen auf dem iPhone – touch-action: none auf allen Reglern,
-   localStorage-Schreiben trailing-debounced (Abschluss über change/Verlassen),
-   Von→Zu-/Trendzeile reserviert ihren Platz – app.js/index.html/styles.css,
+/* v9: Höhenkonstanz auch auf schmalen Geräten – Trendzeile gekürzt (bleibt ab
+   360 px einzeilig, der Blindtext-Platzhalter entfällt), Vergleichstext aus der
+   Formel-Unterzeile in die reservierte Trendzeile, Ergebniszahl unter 401 px auf
+   22 px, damit Wert und Badge in einer Zeile bleiben – app.js/styles.css/README,
    keine neuen Dateien, SHELL unverändert. */
-const VERSION = 'sturzfaktor-v8';
+const VERSION = 'sturzfaktor-v9';
 const SHELL = [
   './',
   'index.html',

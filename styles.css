@@ -269,7 +269,7 @@ main {
 /* Einzige Karteninhalt-Ebene: Trennlinie/Abstand der .disc hier nicht nötig. */
 .dyn-disc { border-top: 0; padding-top: 0; }
 .dyn-disc > summary { flex-wrap: wrap; row-gap: 2px; }
-.disc-sep, .disc-state {
+.dyn-disc .disc-sep, .dyn-disc .disc-state {
   font-size: 12px; font-weight: 600; color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
@@ -312,6 +312,16 @@ main {
 .dyn-out .m-sub { color: var(--ink-2); }
 .dyn-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
 .dyn-out .m-val { font-size: 26px; min-width: 0; }
+/* Schmale Geräte: Ergebniszahl und Status-Badge müssen in EINE Zeile passen.
+   Bei 26 px wird „4,41 → 4,43 kN" + Badge „DEUTLICH" 251,6 px breit und sprengt
+   die 242 px Innenbreite bei 360 px Viewport — die Badge klappt dann je nach
+   Stellenzahl des Werts um und der Ergebnis-Kasten wächst um 31 px. Mit der
+   Basisgröße der Sekundär-Metriken (22 px) bleibt die Zeile bis 360 px einzeilig
+   (gemessen 228,7 px, ungünstigste Wert-/Badge-Paarung 233,6 px). Ab 401 px
+   trägt 26 px wieder mit Reserve (257,9 px gegen 312 px bei 430 px). */
+@media (max-width: 400px) {
+  .dyn-out .m-val { font-size: 22px; }
+}
 /* Von→Zu in der Ergebniszeile: „4,41 → 3,56 kN" — Basiswert klein und gedämpft
    vor dem neuen Wert, Einheit nur einmal am Ende. */
 .dd-von { font-size: .62em; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
@@ -320,7 +330,16 @@ main {
    min-height = genau eine Zeile (12,5px · 1,35): Der Platz steht auch im
    inaktiven Zustand, damit der Ergebnis-Kasten beim Übergang 0 ↔ 0,05 nicht um
    eine Zeilenhöhe wächst. Die Zeile ist ein Flex-Item von .dyn-out und damit
-   blockartig — min-height greift. */
+   blockartig — min-height greift.
+   Die reservierte EINE Zeile trägt nur, solange der Text auch wirklich einzeilig
+   bleibt. Deshalb ist er bewusst kurz gehalten („↓ −19,3 % ggü. Fangstoß oben",
+   app.js): gemessen 182,7 px einstellig bis 207,3 px vierstellig gegen 242 px
+   Innenbreite bei 360 px Viewport. Die frühere Langform („… gegenüber dem
+   Fangstoß oben", 251–268 px) brach je nach Stellenzahl des Prozentwerts um und
+   ließ den Kasten mitten im Ziehen um eine Zeilenhöhe springen. Dieselbe Zeile
+   trägt den Ersatztext ohne sichtbaren Wertunterschied („unverändert ggü.
+   12,34 kN", 165,5 px). Wer einen dieser Texte verlängert, muss die Messung
+   wiederholen. */
 .dyn-trend {
   font-size: 12.5px; font-weight: 600; line-height: 1.35; min-height: 1.35em;
   color: var(--ink-2); font-variant-numeric: tabular-nums;
@@ -329,12 +348,6 @@ main {
    visibility statt [hidden]/display:none, sonst springt der Block. Reservieren
    heißt ausdrücklich NICHT „4,41 → 4,41" anzeigen: die Elemente sind leer. */
 .dd-von[data-leer], .dyn-trend[data-leer] { visibility: hidden; }
-/* Der reservierte Platz muss so viele Zeilen halten, wie der spätere Text
-   braucht — auf schmalen Geräten (≤ 375 px) bricht die Trendzeile zweizeilig um.
-   Deshalb reserviert ein unsichtbarer Blindtext gleicher Länge statt einer
-   festen Höhe: er wird nie gezeichnet (visibility der Elternzeile) und steht in
-   keinem textContent, hält aber bei jeder Breite genau die richtige Zeilenzahl. */
-.dyn-trend[data-leer]::before { content: "↑ +00,0 % gegenüber dem Fangstoß oben"; }
 .dyn-trend[data-richtung="ab"]  { color: var(--gut); }
 .dyn-trend[data-richtung="auf"] { color: var(--hoch); }
 .dyn-note {

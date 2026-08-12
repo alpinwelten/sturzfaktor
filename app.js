@@ -170,16 +170,15 @@ function setHint(el, text, tone) {
   if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
 }
 
-// „−9,8 % ggü. 4,41 kN" bzw. „unverändert"
+// Vergleich in Worten für die Trendzeile, wenn die Von→Zu-Darstellung entfällt,
+// weil sich der angezeigte Wert nicht sichtbar ändert: „unverändert ggü. 4,41 kN"
+// bzw. „−0,1 % ggü. 4,41 kN".
 function vergleich(prozent, basiskN) {
   if (prozent == null || basiskN == null) return '';
   if (Math.abs(prozent) < 0.05) return `unverändert ggü. ${fmt(basiskN, 1, 2)} kN`;
   const vz = prozent > 0 ? '+' : '−';
   return `${vz}${fmt(Math.abs(prozent), 1, 1)} % ggü. ${fmt(basiskN, 1, 2)} kN`;
 }
-
-// Anhang an die Formel-Unterzeile, solange er nicht leer ist.
-const anhang = (t) => (t ? ` · ${t}` : '');
 
 function setWert(valId, text) {
   $(valId).querySelector('.dd-neu').textContent = text;
@@ -210,7 +209,16 @@ function fuellen(el, text) {
 // Von→Zu-Darstellung „4,41 → 3,56 kN" plus Richtungspfeil und Prozentangabe.
 // Gezeigt nur bei wirklich aktivem Effekt UND sichtbar anderem Wert — nie „4,41 → 4,41".
 // Der Von-Wert ist der aktuelle Basis-Fangstoß von oben und läuft live mit.
-// Rückgabe: true, wenn die Zeile steht (dann trägt sie die Prozentangabe).
+// Greift der Effekt, ohne den ANGEZEIGTEN Wert zu verändern, trägt dieselbe
+// reservierte Zeile den Vergleich in Worten („unverändert ggü. 4,41 kN").
+// Früher hing dieser Satz an der Formel-Unterzeile — dort brach er auf 360 px
+// um und ließ den Kasten um eine Zeile wachsen. Beides steht nie gleichzeitig.
+// Die Trendzeile ist bewusst kurz („ggü." wie in vergleich() oben): Sie muss auf
+// 360 px Breite auch mit dreistelligem Prozentwert EINzeilig bleiben, sonst
+// wechselt die Höhe des Ergebnis-Kastens an jeder Ziffergrenze (−9,x ↔ −10,x %)
+// und die Seite ruckt unter dem ziehenden Finger weg. Der Bezug bleibt beim
+// Wort: verglichen wird mit dem Fangstoß oben. Messwerte: siehe .dyn-trend
+// in styles.css — jede Verlängerung des Texts muss dort nachgemessen werden.
 function setVonZu(valId, trendId, { aktiv, basiskN, kN, prozent }) {
   const von = $(valId).querySelector('.dd-von');
   const trend = $(trendId);
@@ -219,18 +227,21 @@ function setVonZu(valId, trendId, { aktiv, basiskN, kN, prozent }) {
   const zeigen = !!aktiv && vonTxt !== '—' && zuTxt !== '—' && vonTxt !== zuTxt
     && prozent != null && Number.isFinite(prozent);
 
+  leerLassen(von);
+  trend.removeAttribute('data-richtung');
+
   if (!zeigen) {
-    leerLassen(von);
-    leerLassen(trend);
-    trend.removeAttribute('data-richtung');
-    return false;
+    // Ohne sichtbaren Wertunterschied kein „4,41 → 4,41": Die Von-Zahl bleibt
+    // leer, die Trendzeile nennt den Vergleich nur, wenn der Effekt läuft.
+    const ersatz = aktiv ? vergleich(prozent, basiskN) : '';
+    if (ersatz) fuellen(trend, ersatz); else leerLassen(trend);
+    return;
   }
   fuellen(von, `${vonTxt} → `);                       // U+2192, Trennabstand als Leerzeichen
   const ab = prozent < 0;
   trend.dataset.richtung = ab ? 'ab' : 'auf';         // ab -> --gut, auf -> --hoch
   fuellen(trend, `${ab ? '↓' : '↑'} ${ab ? '−' : '+'}` // U+2193 / U+2191 / U+2212
-    + `${fmt(Math.abs(prozent), 1, 1)} % gegenüber dem Fangstoß oben`);
-  return true;
+    + `${fmt(Math.abs(prozent), 1, 1)} % ggü. Fangstoß oben`);
 }
 
 // Kompakte Zustandszeile für die eingeklappte Karte: aktive Effekte oder „aus".
@@ -250,13 +261,13 @@ function renderDynamik(input, basis) {
 
   // --- Seildurchlauf (Gl. 6.10) ---
   setErgebnis('r-dl', 'r-dl-stufe', d.durchlauf.kN);
-  const dlVonZu = setVonZu('r-dl', 'r-dl-trend', {
+  setVonZu('r-dl', 'r-dl-trend', {
     aktiv: d.in.s > 0, basiskN: b, kN: d.durchlauf.kN, prozent: d.durchlauf.aenderungProzent,
   });
+  // Unterzeile trägt nur die Rechengröße — der Vergleich steht in der Trendzeile.
   $('r-dl-sub').textContent = d.in.s <= 0
     ? 's = 0 m · unverändert'
-    : `s = ${fmt(d.in.s, 1, 2)} m`
-      + (dlVonZu ? '' : anhang(vergleich(d.durchlauf.aenderungProzent, b)));
+    : `s = ${fmt(d.in.s, 1, 2)} m`;
   // Optimum-Kennzeichnung nur zeigen, wenn wirklich Durchlauf gerechnet wird;
   // bei s > 0 ist sie Pflicht (Fig. 7-9: reale Bremsgeräte erreichen die Kurve nicht).
   $('dl-optimum').hidden = !(d.in.s > 0);
@@ -276,14 +287,13 @@ function renderDynamik(input, basis) {
 
   // --- Schlappseil (Gl. 6.12) ---
   setErgebnis('r-sl', 'r-sl-stufe', d.schlapp.kN);
-  const slVonZu = setVonZu('r-sl', 'r-sl-trend', {
+  setVonZu('r-sl', 'r-sl-trend', {
     aktiv: d.schlapp.aktiv && d.schlapp.fEff != null,
     basiskN: b, kN: d.schlapp.kN, prozent: d.schlapp.aenderungProzent,
   });
   $('r-sl-sub').textContent = !d.schlapp.aktiv || d.schlapp.fEff == null
     ? 'δ = 0 m · unverändert'
-    : `f_eff = ${fmt(d.schlapp.fEff, 2, 2)} · δ/L = ${fmt(d.schlapp.deltaProL, 2, 2)}`
-      + (slVonZu ? '' : anhang(vergleich(d.schlapp.aenderungProzent, b)));
+    : `f_eff = ${fmt(d.schlapp.fEff, 2, 2)} · δ/L = ${fmt(d.schlapp.deltaProL, 2, 2)}`;
 
   if (!d.schlapp.aktiv || d.f == null) {
     setHint($('sl-hint'), null);
@@ -306,11 +316,10 @@ function renderDynamik(input, basis) {
     setHint($('ks-hint'), null);
   } else {
     setErgebnis('r-ks', 'r-ks-stufe', d.koerper.kN);
-    const ksVonZu = setVonZu('r-ks', 'r-ks-trend', {
+    setVonZu('r-ks', 'r-ks-trend', {
       aktiv: true, basiskN: b, kN: d.koerper.kN, prozent: d.koerper.aenderungProzent,
     });
-    $('r-ks-sub').textContent = `m_red = ${fmt(d.koerper.mRed, 1, 1)} kg`
-      + (ksVonZu ? '' : anhang(vergleich(d.koerper.aenderungProzent, b)));
+    $('r-ks-sub').textContent = `m_red = ${fmt(d.koerper.mRed, 1, 1)} kg`;
     setHint($('ks-hint'), d.koerper.guenstiger
       ? null
       : 'Modellgrenze: das Näherungsmodell rechnet mit 2·g statt g und liegt für sehr große m₀ '

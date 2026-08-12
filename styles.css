@@ -266,17 +266,43 @@ main {
   font-size: 12px; font-weight: 600; color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
-.dyn-disc .disc-body { gap: 16px; }
+.dyn-disc .disc-body { gap: 18px; }
 .dyn-intro { margin: 0; }
+/* Jeder Effekt ist eine geschlossene Unterkarte: Rahmen, Radius und eigener
+   Innenabstand aus dem Karten-Idiom, dazu der Abstand der .disc-body-Lücke —
+   so ist beim Scrollen sofort sichtbar, wo ein Block endet. */
 .dyn-block {
   display: flex; flex-direction: column; gap: 12px;
-  border-top: 1px solid var(--line); padding-top: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  padding: 13px 12px;
 }
+/* Kopfzeile der Unterkarte: Effektname als Blocktitel — Muster der .field-top
+   (Titel links, Beleg rechts), aber kräftiger als ein Feldlabel, mit Trennlinie
+   über die volle Blockbreite. */
+.dyn-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  border-bottom: 1px solid var(--line-2); padding-bottom: 9px;
+}
+.dyn-title {
+  margin: 0; font-size: 15.5px; font-weight: 700; letter-spacing: .1px;
+  color: var(--ink); line-height: 1.2;
+}
+.dyn-tag {
+  font-size: 11px; font-weight: 600; color: var(--ink-3);
+  font-family: var(--mono); white-space: nowrap;
+}
+/* Eingabefeld hebt sich in der getönten Unterkarte über die Kartenfläche ab. */
+.dyn-block .num { background: var(--surface); }
+/* Ergebnis-Kasten: eine Tönungsstufe tiefer als die Unterkarte plus kräftiger
+   Akzentrahmen — in beiden Farbmodi ausschließlich aus vorhandenen Tokens. */
 .dyn-out {
   display: flex; flex-direction: column; gap: 3px;
-  background: var(--surface-2); border: 1px solid var(--line);
-  border-radius: var(--r-md); padding: 11px 13px;
+  background: var(--accent-soft); border: 1px solid var(--accent);
+  border-radius: var(--r-md); padding: 11px 12px;
 }
+.dyn-out .m-sub { color: var(--ink-2); }
 .dyn-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
 .dyn-out .m-val { font-size: 26px; min-width: 0; }
 /* Von→Zu in der Ergebniszeile: „4,41 → 3,56 kN" — Basiswert klein und gedämpft

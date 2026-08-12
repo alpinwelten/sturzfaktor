@@ -19,6 +19,11 @@ oberste Zwischensicherung und Sicherer.
   wenn ein Effekt aktiv ist (`s > 0`, `δ > 0` oder `m₀ > 0`); der Auf/Zu-Zustand selbst
   wird nicht gespeichert. Jeder Effekt wird **einzeln** gegen den Fangstoß oben
   gerechnet – die drei Werte sind nicht kombinierbar
+- **Eine Unterkarte je Effekt:** in der aufgeklappten Dynamik-Karte steht jeder Effekt in
+  einem eigenen, gerahmten Block mit Kopfzeile (Effektname links, Quellenbeleg rechts);
+  Eingabe, Ergebnis-Kasten und Hinweise des Effekts liegen darin. Der Ergebnis-Kasten ist
+  farblich abgesetzt (Akzent-Tönung + Akzentrahmen), damit er sich vom Blockhintergrund
+  abhebt
 - **Von→Zu-Ergebniszeile:** greift ein Effekt, zeigt die Ergebniszeile
   `Basiswert → neuer Wert` (Einheit einmal am Ende) und darunter Richtungspfeil samt
   Prozentänderung – `↓` grün für niedriger, `↑` warnfarben für höher, beides aus den

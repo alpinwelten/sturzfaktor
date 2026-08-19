@@ -307,6 +307,29 @@
     </details>
   </section>
 
+  <!-- ============================ TESTPROTOKOLL ============================ -->
+  <!-- Steht bewusst als LETZTE Karte: Alles hier ändert sich nur bei Taps,
+       nie während eines Reglerzugs — oberhalb der Regler bewegt sich nichts. -->
+  <section class="card prot" aria-label="Testprotokoll">
+    <details class="disc prot-disc" id="disc-prot">
+      <summary>
+        <span class="disc-label">Testprotokoll</span>
+        <span class="disc-state" id="prot-state">leer</span>
+      </summary>
+      <div class="disc-body">
+        <p class="prot-intro muted">Hält die aktuelle Rechnung als fortlaufend
+          nummerierten Test fest — für die Dokumentation vieler Durchgänge.</p>
+        <button class="prot-save" type="button" id="btn-test-save">Als Test speichern</button>
+        <p class="prot-hinweis" id="prot-hinweis" data-leer aria-live="polite"></p>
+        <ul class="prot-liste" id="prot-liste"></ul>
+        <div class="prot-foot">
+          <button class="reset" type="button" id="btn-export" disabled>Excel-Export (.xlsx)</button>
+          <button class="reset prot-clear" type="button" id="btn-alle-loeschen" disabled>Alle löschen</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
   <footer class="foot">
     <p class="mono">F = m·g + √( (m·g)² + 2·m·g·M·f )</p>
     <p class="muted">g = 9,81 m/s² · UIAA-Normsturz: 80 kg, Faktor 1,77, Grenze 12 kN ·

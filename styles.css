@@ -403,6 +403,65 @@ main {
 }
 .dyn-note strong { color: var(--ink-2); font-weight: 700; }
 
+/* ---------------------------- TESTPROTOKOLL ---------------------------- */
+/* Letzte Karte der Seite; ändert sich nur bei Taps, nie im Reglerzug. Trotzdem
+   gilt der Höhenkonstanz-Kanon: alles Einzeilige ist nowrap+Ellipsis erzwungen,
+   die Feedbackzeile hat FESTE Höhe und reserviert ihren Platz über [data-leer]. */
+.prot { display: flex; flex-direction: column; }
+.prot-disc { border-top: 0; padding-top: 0; }
+.prot-disc > summary { flex-wrap: nowrap; }
+.prot-disc .disc-label { flex: none; }
+/* Zustand („3 Tests") — Spiegel von .dyn-disc .disc-state inkl. eingefrorener
+   Kopfzeile: bei offener Karte ausgeblendet und in app.js nicht fortgeschrieben. */
+.prot-disc .disc-state {
+  flex: 0 1 auto; min-width: 0; margin-left: 4px;
+  font-size: 11.5px; font-weight: 600; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prot-disc[open] .disc-state { display: none; }
+.prot-intro { margin: 0; font-size: 12.5px; line-height: 1.5; }
+/* Primärbutton nur aus Tokens: hell Tinte-auf-Teal, dunkel dunkle Tinte auf
+   hellem Teal — kein eigener Dark-Mode-Override nötig. */
+.prot-save {
+  border: 0; background: var(--accent); color: var(--bg);
+  font: inherit; font-size: 13.5px; font-weight: 700;
+  padding: 11px 14px; border-radius: var(--r-sm); cursor: pointer;
+}
+.prot-save:active { transform: translateY(1px); }
+/* Feedbackzeile („✓ Test 3 gespeichert"): feste Höhe, Platz bleibt reserviert.
+   Die [data-leer]-Bestandsregel ist auf .dd-von/.dyn-trend gescopet — hier
+   deshalb die eigene. */
+.prot-hinweis {
+  margin: 0; font-size: 12.5px; font-weight: 600; color: var(--gut);
+  line-height: 1.45; height: 1.45em; flex: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prot-hinweis[data-leer] { visibility: hidden; }
+.prot-hinweis[data-tone="krit"] { color: var(--krit); }
+.prot-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* Zeile strukturell einzeilig: Text kürzt per Ellipsis, bricht nie um. */
+.prot-zeile {
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 8px;
+  border-top: 1px solid var(--line); min-height: 38px;
+}
+.prot-zeile:first-child { border-top: 0; }
+.prot-txt {
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.prot-del {
+  flex: none; width: 34px; height: 34px; border: 0; background: transparent;
+  color: var(--ink-3); font: inherit; font-size: 17px; line-height: 1;
+  cursor: pointer; border-radius: var(--r-sm);
+}
+.prot-del:active { background: var(--surface-2); color: var(--krit); }
+.prot-foot { display: flex; gap: 8px; }
+.prot-foot .reset { flex: 1; align-self: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reset:disabled { opacity: .45; cursor: default; }
+/* Scharfgestelltes „Wirklich löschen?" (Zweifach-Tipp statt window.confirm) */
+.prot-clear[data-armed] { border-color: var(--krit); color: var(--krit); }
+
 /* Fußnote */
 .foot { text-align: center; padding: 2px 6px; display: flex; flex-direction: column; gap: 6px; }
 .foot .mono { font-size: 12.5px; color: var(--ink-2); }

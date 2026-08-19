@@ -8,13 +8,20 @@
    mehr fortgeschrieben. Damit hängt keine Höhe mehr an Glyphenbreiten oder
    Text-Zoom – index.html/app.js/styles.css/README, keine neuen Dateien,
    SHELL unverändert. */
-const VERSION = 'sturzfaktor-v10';
+/* v11: Testprotokoll — Karte am Seitenende speichert Rechnungen fortlaufend
+   nummeriert („Test 1", „Test 2", …) unter localStorage sturzfaktor.tests.v1
+   und exportiert sie als echtes .xlsx ohne Fremdbibliothek. Neue Shell-Dateien
+   js/protokoll.mjs + js/xlsx.mjs (app.js importiert beide — ohne Precache wäre
+   der Offline-Start nach dem Update kaputt). */
+const VERSION = 'sturzfaktor-v11';
 const SHELL = [
   './',
   'index.html',
   'styles.css',
   'app.js',
   'js/engine.mjs',
+  'js/protokoll.mjs',
+  'js/xlsx.mjs',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',

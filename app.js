@@ -1,10 +1,17 @@
 // app.js — UI-Wiring für den Sturzfaktor-/Fangstoß-Rechner.
 // Live-Recalc bei jeder Eingabe, Slider↔Feld-Sync, Stepper, Modul-Presets,
-// optionale Modul-Rückrechnung aus dem UIAA-Fangstoß, Persistenz, PWA-Install.
+// optionale Modul-Rückrechnung aus dem UIAA-Fangstoß, Persistenz, PWA-Install,
+// Testprotokoll (fortlaufend nummerierte Schnappschüsse) mit Excel-Export.
 import {
   computeSturz, computeDynamik, bewertung, rhoAusC,
   modulAusUIAA, MODUL_PRESETS, DEFAULTS,
 } from './js/engine.mjs';
+import {
+  TESTS_STORE, BLATT_NAME, SPALTEN,
+  neuerBestand, parseBestand, testHinzufuegen, testEntfernen, alleEntfernen,
+  testZuZeile, formatZeitKurz, dateiname,
+} from './js/protokoll.mjs';
+import { erzeugeXlsx } from './js/xlsx.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -403,6 +410,155 @@ function load() {
   manualM = $('in-M').value || String(DEFAULTS.M);
 }
 
+// ---- Testprotokoll ----------------------------------------------------------
+// Fortlaufend nummerierte Schnappschüsse (Eingaben + Ergebnisse) unter eigenem
+// Schlüssel, getrennt vom Live-Zustand oben. Geschrieben wird direkt beim Tap —
+// anders als beim Live-Zustand braucht es kein Debounce, weil kein Reglerzug
+// beteiligt ist. Bei vollem Speicher wird der In-Memory-Eintrag zurückgerollt,
+// damit Anzeige und Store nicht auseinanderlaufen.
+let bestand = neuerBestand();
+let protZustandText = 'leer';
+let protHinweisTimer = null;
+let loeschenTimer = null;
+
+function bestandLaden() {
+  bestand = parseBestand(localStorage.getItem(TESTS_STORE));
+}
+function bestandSchreiben() {
+  try { localStorage.setItem(TESTS_STORE, JSON.stringify(bestand)); return true; }
+  catch { return false; }
+}
+
+// Rohwerte fürs Protokoll: gatherInput() liefert M bereits als WIRKSAMES Modul —
+// Feldwert und UIAA-Fangstoß werden für die Dokumentation zusätzlich roh gelesen.
+function protokollEingaben(input) {
+  return {
+    m: input.m, h: input.h, L: input.L,
+    M: num('in-M'), uiaa: num('in-uiaa'),
+    uiaaOn: input._uiaaOn, mEff: input.M,
+    c: input.c, s: input.s, delta: input.delta, m0: input.m0,
+  };
+}
+
+// Kopfzeilen-Disziplin wie bei der Dynamik-Karte: Bei offener Karte wird der
+// Summary-Zustand nicht fortgeschrieben, nachgetragen wird beim Zuklappen.
+function setProtZustand() {
+  const n = bestand.tests.length;
+  protZustandText = n === 0 ? 'leer' : n === 1 ? '1 Test' : `${n} Tests`;
+  if (!$('disc-prot').open) $('prot-state').textContent = protZustandText;
+}
+
+// Feedback in der Zeile mit FESTER Höhe ([data-leer]-Muster): Der Platz ist
+// immer reserviert, Ein-/Ausblenden ändert die Kartenhöhe nie.
+function zeigeProtHinweis(text, tone) {
+  const el = $('prot-hinweis');
+  if (protHinweisTimer != null) clearTimeout(protHinweisTimer);
+  if (tone) el.dataset.tone = tone; else el.removeAttribute('data-tone');
+  fuellen(el, text);
+  protHinweisTimer = setTimeout(() => { protHinweisTimer = null; leerLassen(el); }, 2200);
+}
+
+function loeschenEntwaffnen() {
+  if (loeschenTimer != null) { clearTimeout(loeschenTimer); loeschenTimer = null; }
+  const btn = $('btn-alle-loeschen');
+  btn.removeAttribute('data-armed');
+  btn.textContent = 'Alle löschen';
+}
+
+function renderProtokoll() {
+  const liste = $('prot-liste');
+  liste.textContent = '';
+  // Neueste zuerst: der jüngste Test ist ohne Scrollen sichtbar. Zeilen sind
+  // strukturell einzeilig (.prot-txt: nowrap + Ellipsis).
+  for (const t of [...bestand.tests].reverse()) {
+    const li = document.createElement('li');
+    li.className = 'prot-zeile';
+    const txt = document.createElement('span');
+    txt.className = 'prot-txt';
+    txt.textContent = `${t.name} · ${formatZeitKurz(t.zeit)} · f ${fmtWert(t.ergebnisse.f)} · ${fmtKN(t.ergebnisse.fangstosskN)}`;
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'prot-del';
+    del.dataset.nr = String(t.nr);
+    del.setAttribute('aria-label', `${t.name} löschen`);
+    del.textContent = '×';
+    li.append(txt, del);
+    liste.append(li);
+  }
+  const leer = bestand.tests.length === 0;
+  $('btn-export').disabled = leer;
+  $('btn-alle-loeschen').disabled = leer;
+  loeschenEntwaffnen();
+  setProtZustand();
+}
+
+function testSpeichern() {
+  const input = gatherInput();
+  const t = testHinzufuegen(
+    bestand, protokollEingaben(input), computeSturz(input), computeDynamik(input), Date.now()
+  );
+  if (!bestandSchreiben()) {
+    // Rollback: Die Liste darf nichts zeigen, was nicht im Speicher liegt.
+    testEntfernen(bestand, t.nr);
+    bestand.nextNr = t.nr;
+    zeigeProtHinweis('Speichern fehlgeschlagen – Speicher voll', 'krit');
+    return;
+  }
+  renderProtokoll();
+  zeigeProtHinweis(`✓ ${t.name} gespeichert`);
+}
+
+function exportiereXlsx() {
+  const bytes = erzeugeXlsx({
+    blattName: BLATT_NAME,
+    kopf: SPALTEN.map((s) => s.titel),
+    zeilen: bestand.tests.map(testZuZeile),   // chronologisch, Test 1 zuoberst
+  });
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname(new Date());
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);   // iOS braucht die URL noch fürs Share-Sheet
+}
+
+// Zweifach-Tipp statt window.confirm: Ein blockierender Browserdialog passt
+// nicht in die PWA, und ein Fehl-Tipp entschärft sich nach 4 s von selbst.
+function alleLoeschenZweiTapp() {
+  const btn = $('btn-alle-loeschen');
+  if (!btn.hasAttribute('data-armed')) {
+    btn.dataset.armed = '1';
+    btn.textContent = 'Wirklich löschen?';
+    loeschenTimer = setTimeout(loeschenEntwaffnen, 4000);
+    return;
+  }
+  bestand = alleEntfernen();
+  bestandSchreiben();
+  renderProtokoll();
+  zeigeProtHinweis('Protokoll geleert');
+}
+
+function wireProtokoll() {
+  $('btn-test-save').addEventListener('click', testSpeichern);
+  $('btn-export').addEventListener('click', exportiereXlsx);
+  $('btn-alle-loeschen').addEventListener('click', alleLoeschenZweiTapp);
+  // Einzel-Löschen per Delegation; Nummern werden nie neu vergeben (nextNr bleibt).
+  $('prot-liste').addEventListener('click', (e) => {
+    const btn = e.target.closest('.prot-del');
+    if (!btn) return;
+    testEntfernen(bestand, Number(btn.dataset.nr));
+    bestandSchreiben();
+    renderProtokoll();
+  });
+  // Zuklappen: zurückgehaltenen Zustandstext nachtragen (Muster der Dynamik-Karte).
+  $('disc-prot').addEventListener('toggle', () => {
+    if (!$('disc-prot').open) $('prot-state').textContent = protZustandText;
+  });
+}
+
 // Auf/Zu der Dynamik-Karte wird NICHT gespeichert, sondern aus der Aktivität
 // abgeleitet: Wer mit gesetztem s, δ oder m₀ zurückkommt, sieht die Karte offen.
 function oeffneDynamikWennAktiv() {
@@ -533,5 +689,8 @@ load();
 syncSlidersFromFields();
 oeffneDynamikWennAktiv();
 wire();
+bestandLaden();
+wireProtokoll();
+renderProtokoll();
 pwa();
 render(false); // Init: noch nicht persistieren – Store erst nach echter Interaktion schreiben

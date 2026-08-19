@@ -47,6 +47,16 @@ oberste Zwischensicherung und Sicherer.
   oder Optimum-Hinweis erscheint bzw. verschwindet. Hinweistexte dürfen weiter umbrechen,
   enthalten dafür aber keine pro Tick wechselnden Zahlwerte mehr (die Sättigungslänge
   `Optimum ab 0,27 m` steht in der einzeiligen Unterzeile)
+- **Testprotokoll mit Excel-Export:** Die letzte Karte hält die aktuelle Rechnung per
+  Knopf als fortlaufend nummerierten Eintrag fest (`Test 1`, `Test 2`, …) — Eingaben
+  **und** Ergebnisse, mit Zeitstempel. Nummern werden nie neu vergeben (Einzel-Löschen
+  lässt den Zähler stehen, damit ältere Exporte eindeutig bleiben); erst „Alle löschen"
+  (Zweifach-Tipp, kein Browserdialog) startet wieder bei 1. Der Export erzeugt ein
+  echtes `.xlsx` **ohne Fremdbibliothek** (eigener Minimal-Writer, unkomprimiertes
+  OPC-ZIP, Inline-Strings): eine Zeile je Test, 28 Spalten mit Einheiten im Kopf,
+  Zahlen als echte Zahlzellen (Punktdezimale intern — Excel zeigt sie in deutscher
+  Umgebung mit Komma). Auf iOS öffnet der Export das Share-Sheet („In Dateien
+  sichern" bzw. direkt in Excel/Numbers öffnen)
 - Installierbar & offline (Service Worker)
 
 ## Formeln
@@ -154,6 +164,17 @@ verlassen), bei „Zurücksetzen" sofort und beim Verlassen der App
 (`visibilitychange` → hidden, `pagehide`) — ein Wechsel mitten im Debounce-Fenster
 verliert also nichts.
 
+**Zweiter Schlüssel `sturzfaktor.tests.v1`** (Testprotokoll, `schema: 1`): hält den
+Zähler `nextNr` und die Liste `tests[]` — je Test `nr`, `name`, `zeit` (Epoch-ms) sowie
+`eingaben` und `ergebnisse` als **rohe, ungerundete** Zahlen (formatiert wird nur bei
+Anzeige und Export; die Ergebnisse werden mitgespeichert, damit alte Protokolle auch
+nach späteren Engine-Änderungen dokumentieren, was damals gerechnet wurde). Geschrieben
+wird direkt beim Tap — hier ist kein Reglerzug beteiligt, ein Debounce ist unnötig.
+Schlägt das Schreiben fehl (Speicher voll), wird der Eintrag zurückgerollt und die App
+meldet es in der Hinweiszeile; der Live-Zustand unter `sturzfaktor.v1` bleibt davon
+unberührt. Kaputte oder schema-fremde Bestände werden beim Laden verworfen (frischer
+Bestand), ein zu kleiner Zähler wird defensiv auf `max(nr) + 1` angehoben.
+
 ## Quellen
 
 - U. Leuthäusser: *Physics of climbing ropes – part 3: viscous and dry friction combined,
@@ -167,7 +188,10 @@ verliert also nichts.
 ```
 index.html · styles.css · app.js        UI (build-free, Vanilla)
 js/engine.mjs                            reine Physik (DOM-frei, testbar)
+js/protokoll.mjs                         Testprotokoll: Spalten, Zähler, Storage-Form (DOM-frei)
+js/xlsx.mjs                              Minimal-XLSX-Writer, dependency-frei (DOM-frei)
 test/engine.test.mjs                     node:test
+test/protokoll.test.mjs · test/xlsx.test.mjs   node:test
 manifest.webmanifest · sw.js             PWA (installierbar, offline)
 icons/icon.svg + tools/generate-icons.mjs  Icons via Headless-Chrome
 tools/make-qr.py                         QR-Code (qrcode + PIL)
@@ -176,7 +200,7 @@ tools/make-qr.py                         QR-Code (qrcode + PIL)
 ## Entwicklung
 
 ```bash
-npm test                 # Engine-Tests (node --test)
+npm test                 # Tests: Engine + Testprotokoll + XLSX-Writer (node --test)
 npm run icons            # PNG-Icons aus icons/icon.svg erzeugen
 npm run qr               # QR-Codes erzeugen
 python3 -m http.server   # lokal testen -> http://localhost:8000
